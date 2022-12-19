@@ -117,51 +117,28 @@ class Train:
 
     def split_train_test(self, dataset):
         """That's just a copy of Kyle's code for now"""
-
-        """Split a dataset into training and testing parts.
-        We train on 90%, and test on 10%. We use a fixed algorithm to split the train and
-        test so that we don't have to keep track of what we did.
-        Parameters
-        ----------
-        dataset : `~lcdata.Dataset`
-            Dataset to split
-        Returns
-        -------
-        `~lcdata.Dataset`
-            Training dataset
-        `~lcdata.Dataset`
-            Test dataset
-        """
-        # Keep part of the dataset for validation
         train_mask = np.ones(len(dataset), dtype=bool)
         train_mask[::10] = False
         test_mask = ~train_mask
-
-        print(dataset)
-        quit()
 
         train_dataset = dataset[train_mask]
         test_dataset = dataset[test_mask]
 
         return train_dataset, test_dataset
 
-    # noisification_paramdict = {
-    #     "max_redshift_delta": 0.1,
-    #     "classes": ["tde", "slsn", "baratheon", "snia"],
-    #     "redshift_dist": "cubic",
-    #     "k_scale": 1.25,
-    #     "phase_limit": {"long_lived": [-50, 200], "short_lived": [-30, 50]},
-    #     "no_k_classes": ["tde", "slsn"],
-    #     "sn_cuts": {"n_det": 5, "sn_threshold": 5},
-    #     "k_correction": None,
-    #     "augmentation": {
-    #         "mode": "per_class",
 
-
+# noisification_paramdict = {
+#     "max_redshift_delta": 0.1,
+#     "classes": ["tde", "slsn", "baratheon", "snia"],
+#     "redshift_dist": "cubic",
+#     "k_scale": 1.25,
+#     "phase_limit": {"long_lived": [-50, 200], "short_lived": [-30, 50]},
+#     "no_k_classes": ["tde", "slsn"],
+#     "sn_cuts": {"n_det": 5, "sn_threshold": 5},
+#     "k_correction": None,
+#     "augmentation": {
+#         "mode": "per_class",
 #         "multiplier": {"snia": 10, "slsn": 100, "tde": 100, "baratheon": 100},
 #     },
 #     "verification_percentage": 0.1,
 # }
-
-# parsnip extra parameters
-# asdf
