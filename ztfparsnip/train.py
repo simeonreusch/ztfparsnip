@@ -89,7 +89,7 @@ class Train:
         dataset = model.preprocess(dataset)
 
         # do own test train validation split here!!!!
-        train_dataset, test_dataset = parsnip.split_train_test(dataset)
+        train_dataset, test_dataset = self.split_train_test(dataset)
         model.fit(
             train_dataset, test_dataset=test_dataset, max_epochs=args["max_epochs"]
         )
@@ -106,10 +106,44 @@ class Train:
 
         with open("./parsnip_results.log", "a") as f:
             print(
-                f"{model_path} {model.epoch} {elapsed_time:.2f} {train_score:.4f} "
+                f"{outfile} {model.epoch} {elapsed_time:.2f} {train_score:.4f} "
                 f"{test_score:.4f}",
                 file=f,
             )
+
+        self.logger.info(
+            f"outfile={outfile} epoch={model.epoch} elapsed_time={elapsed_time:.2f} train_score={train_score:.4f} test_score={test_score:.4f}"
+        )
+
+    def split_train_test(self, dataset):
+        """That's just a copy of Kyle's code for now"""
+
+        """Split a dataset into training and testing parts.
+        We train on 90%, and test on 10%. We use a fixed algorithm to split the train and
+        test so that we don't have to keep track of what we did.
+        Parameters
+        ----------
+        dataset : `~lcdata.Dataset`
+            Dataset to split
+        Returns
+        -------
+        `~lcdata.Dataset`
+            Training dataset
+        `~lcdata.Dataset`
+            Test dataset
+        """
+        # Keep part of the dataset for validation
+        train_mask = np.ones(len(dataset), dtype=bool)
+        train_mask[::10] = False
+        test_mask = ~train_mask
+
+        print(dataset)
+        quit()
+
+        train_dataset = dataset[train_mask]
+        test_dataset = dataset[test_mask]
+
+        return train_dataset, test_dataset
 
     # noisification_paramdict = {
     #     "max_redshift_delta": 0.1,
