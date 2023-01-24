@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 
-import logging, os, subprocess, time
+import logging, os, subprocess, time, warnings
 
 import lcdata  # type: ignore
 import pandas as pd  # type: ignore
 import numpy as np
-
+from numpy.random import default_rng
 import parsnip
 
 
 class Train:
-    def __init__(self, path: str):
+    def __init__(self, path: str, seed=None):
         self.training_path = path
         self.logger = logging.getLogger(__name__)
+        self.rng = default_rng(seed=seed)
 
         meta_df = lcdata.read_hdf5(self.training_path, in_memory=False).meta.to_pandas()
 
@@ -39,17 +40,13 @@ class Train:
         )
 
         self.meta = meta_df
-        self.print_statistics()
 
     def print_statistics(self):
         """Get some statistics on the training set"""
         n_classes = len(unique_class := self.meta["class"].unique())
         self.logger.info(
-            f"There are {n_classes} different classes in the training data, these are:"
+            f"There are {n_classes} different classes in the training data, these are: {unique_class}"
         )
-        for cl in unique_class:
-            self.logger.info(cl)
-        self.logger.info("--------")
         n_parent_id = len(unique_parent := self.meta["parent_id"].unique())
         self.logger.info(
             f"There are {n_parent_id} parent objects. From these, {len(self.meta)} lightcurves have been created."
@@ -90,6 +87,7 @@ class Train:
 
         # do own test train validation split here!!!!
         train_dataset, test_dataset = self.split_train_test(dataset)
+
         model.fit(
             train_dataset, test_dataset=test_dataset, max_epochs=args["max_epochs"]
         )
@@ -115,10 +113,24 @@ class Train:
             f"outfile={outfile} epoch={model.epoch} elapsed_time={elapsed_time:.2f} train_score={train_score:.4f} test_score={test_score:.4f}"
         )
 
-    def split_train_test(self, dataset):
-        """That's just a copy of Kyle's code for now"""
+    def split_train_test(self, dataset: lcdata.dataset.Dataset, ratio=0.1):
+        """
+        Split train and test set.
+        Default ratio 0.1 (90% training, 10% testing)
+        """
+        self.logger.info(f"Splitting train and test dataset. Selected ratio: {ratio}")
+        unique_parents = self.meta.parent_id.unique()
+        size_train = int(ratio * len(unique_parents))
+        train_parents = self.rng.choice(unique_parents, size=size_train)
+        test_df = self.meta.query("parent_id in @train_parents")
+
+        self.logger.info(
+            f"Making sure no parent IDs are shared between train and test. Effective ratio: {len(test_df)/len(self.meta):.2f}"
+        )
+
         train_mask = np.ones(len(dataset), dtype=bool)
-        train_mask[::10] = False
+        train_mask[test_df.index.values] = False
+
         test_mask = ~train_mask
 
         train_dataset = dataset[train_mask]
