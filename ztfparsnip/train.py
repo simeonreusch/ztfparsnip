@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import logging, os, subprocess, time, warnings
+from typing import Tuple
 
 import lcdata  # type: ignore
 import pandas as pd  # type: ignore
@@ -41,6 +42,8 @@ class Train:
 
         self.meta = meta_df
 
+        self.print_statistics()
+
     def print_statistics(self):
         """Get some statistics on the training set"""
         n_classes = len(unique_class := self.meta["class"].unique())
@@ -64,8 +67,43 @@ class Train:
 
         start_time = time.time()
 
-        parser = parsnip.build_default_argparse("Run Parsnip")
-        args = vars(parser.parse_args())
+        # parser = parsnip.build_default_argparse("Run Parsnip")
+        # args = vars(parser.parse_args())
+        args = {
+            "model_version": 2,
+            "input_redshift": True,
+            "predict_redshift": False,
+            "specz_error": 0.01,
+            "min_wave": 1000.0,
+            "max_wave": 11000.0,
+            "spectrum_bins": 300,
+            "max_redshift": 4.0,
+            "band_oversampling": 51,
+            "time_window": 300,
+            "time_pad": 100,
+            "time_sigma": 20.0,
+            "color_sigma": 0.3,
+            "magsys": "ab",
+            "error_floor": 0.01,
+            "zeropoint": 25.0,
+            "batch_size": 128,
+            "learning_rate": 0.001,
+            "scheduler_factor": 0.5,
+            "min_learning_rate": 1e-05,
+            "penalty": 0.001,
+            "optimizer": "Adam",
+            "sgd_momentum": 0.9,
+            "latent_size": 3,
+            "encode_block": "residual",
+            "encode_conv_architecture": [40, 80, 120, 160, 200, 200, 200],
+            "encode_conv_dilations": [1, 2, 4, 8, 16, 32, 64],
+            "encode_fc_architecture": [200],
+            "encode_time_architecture": [200],
+            "encode_latent_prepool_architecture": [200],
+            "encode_latent_postpool_architecture": [200],
+            "decode_architecture": [40, 80, 160],
+        }
+
         args["overwrite"] = True
         args["max_epochs"] = 1000
 
@@ -115,7 +153,7 @@ class Train:
 
     def split_train_test(
         self, dataset: lcdata.dataset.Dataset, ratio=0.1
-    ) -> Tuple(lcdata.dataset.Dataset):
+    ) -> Tuple[lcdata.dataset.Dataset]:
         """
         Split train and test set.
         Default ratio 0.1 (90% training, 10% testing)

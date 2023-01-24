@@ -20,3 +20,6 @@ mypy = "^0.991"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+ztftrain = "main:run"
