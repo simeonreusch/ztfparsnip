@@ -6,7 +6,7 @@ import lcdata  # type: ignore
 import pandas as pd  # type: ignore
 import numpy as np
 from numpy.random import default_rng
-import parsnip
+import parsnip  # type: ignore
 
 
 class Train:
@@ -113,7 +113,9 @@ class Train:
             f"outfile={outfile} epoch={model.epoch} elapsed_time={elapsed_time:.2f} train_score={train_score:.4f} test_score={test_score:.4f}"
         )
 
-    def split_train_test(self, dataset: lcdata.dataset.Dataset, ratio=0.1):
+    def split_train_test(
+        self, dataset: lcdata.dataset.Dataset, ratio=0.1
+    ) -> Tuple(lcdata.dataset.Dataset):
         """
         Split train and test set.
         Default ratio 0.1 (90% training, 10% testing)
