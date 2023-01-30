@@ -58,17 +58,18 @@ class Train:
     def run(self, threads: int = 10, outfile: str | None = None):
         """Run the actual train command"""
         if outfile is None:
-            model_dir = os.path.dirname(self.training_path)
+            model_dir = os.path.abspath("model")
+            if not os.path.exists(model_dir):
+                os.makedirs(model_dir)
             outfile = os.path.join(
                 model_dir,
                 os.path.basename(self.training_path).split(".")[0] + "_model.hd5",
             )
-        # cmd = f"parsnip_train --split_train_test --threads={threads}  {outfile} {self.training_path}"
+
+        self.logger.info(f"Running training. Outfile will be {outfile}")
 
         start_time = time.time()
 
-        # parser = parsnip.build_default_argparse("Run Parsnip")
-        # args = vars(parser.parse_args())
         args = {
             "model_version": 2,
             "input_redshift": True,
@@ -114,8 +115,8 @@ class Train:
         bands = parsnip.get_bands(dataset)
 
         model = parsnip.ParsnipModel(
-            outfile,
-            bands,
+            path=outfile,
+            bands=bands,
             device="cuda",
             threads=8,
             settings=args,
