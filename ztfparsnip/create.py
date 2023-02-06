@@ -5,13 +5,13 @@
 import os, numpy, logging
 
 
-class LightcurveCreator:
+class CreateLightcurves:
     """
     Class to read in BTS sample and create a set of augmented lightcurves
     """
 
     def __init__(self, weights: None | dict):
-        super(LightcurveCreator, self).__init__()
+        super(CreateLightcurves, self).__init__()
         self.weights = weights
 
     print(self.weights)
