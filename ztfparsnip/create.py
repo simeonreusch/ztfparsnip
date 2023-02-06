@@ -7,10 +7,13 @@ import os, numpy, logging
 from tqdm import tqdm
 
 from ztfparsnip import io
-from ztfparsnip.noisify import noisify
+from ztfparsnip import noisify
+import lcdata
 
 
 class CreateLightcurves(object):
+
+    output_filename:str = 'test1'
     """
     This is the parent class for the ZTF nuclear transient sample"""
 
@@ -58,5 +61,20 @@ class CreateLightcurves(object):
         """
         Noisify the sample
         """
+        bts_lc_list = []
+        noisy_lc_list = []
         for lc, header in self.get_lightcurves():
-            noisify(lc, header)
+            bts_lc, noisy_lc = noisify.noisify_lcs(lc, header)
+            bts_lc_list.extend(bts_lc)
+            noisy_lc_list.extend(noisy_lc)
+
+        lc_list = [*bts_lc_list,*noisy_lc_list]
+        
+        # Save h5 files
+        path = os.getcwd()
+        dataset_h5_bts = lcdata.from_light_curves(bts_lc_list)
+        dataset_h5_noisy = lcdata.from_light_curves(noisy_lc_list)
+        dataset_h5_combined = lcdata.from_light_curves(lc_list)
+        dataset_h5_bts.write_hdf5(path + self.output_filename + '_bts.h5')
+        dataset_h5_noisy.write_hdf5(path + self.output_filename + '_noisy.h5')
+        dataset_h5_combined.write_hdf5(path + self.output_filename + '_combined.h5')
