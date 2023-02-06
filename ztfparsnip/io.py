@@ -39,6 +39,9 @@ def add_mag(df: pd.DataFrame) -> pd.DataFrame:
     """
     Add mag and magerr
     """
+    # remove negative flux rows
+    df.query("ampl_corr>0", inplace=True)
+
     F0 = 10 ** (df.magzp / 2.5)
     F0_err = F0 / 2.5 * np.log(10) * df.magzpunc
     flux = df.ampl_corr / F0 * 3630.78
@@ -47,6 +50,7 @@ def add_mag(df: pd.DataFrame) -> pd.DataFrame:
         * 3630.78
     )
 
+    # convert to mag
     abmag = -2.5 * np.log10(flux / 3630.78)
     abmag_err = 2.5 / np.log(10) * flux_err / flux
 
