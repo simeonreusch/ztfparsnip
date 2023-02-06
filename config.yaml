@@ -62,7 +62,7 @@ simpleclasses:
     - bogus?
 
   unclass:
-    - "-"
+    - -
     - None
 
   other:
@@ -98,3 +98,37 @@ simpleclasses:
     - star
     - LBV
     - var
+
+sncosmo_templates:
+  SN Ia: salt2
+  SN Ia?: salt2
+  SN Iax: salt2
+  SN Ia-CSM: salt2
+  SN Ia-CSM?: salt2
+  SN Ia-pec: salt2
+  SN Ia-03fg: salt2
+  SN Ia-norm: salt2
+  SN Ia-91T: nugent-sn91t
+  SN Ia-91bg: nugent-sn91bg
+  SN Ia-91bg?: nugent-sn91bg
+  SN Ib: v19-iptf13bvn-corr
+  SN Ib?: v19-iptf13bvn-corr
+  SN Ibn: v19-iptf13bvn-corr
+  SN Ibn?: v19-iptf13bvn-corr
+  SN Ib/c: nugent-sn1bc
+  SN Ib/c?: nugent-sn1bc
+  SN Ic: v19-2013ge-corr
+  SN Ic?: v19-2013ge-corr
+  SN Icn: v19-2013ge-corr
+  SN Ic-BL: v19-2012ap-corr
+  SN Ic-BL?: v19-2012ap-corr
+  SN II: v19-2016bkv-corr
+  SN II?: v19-2016bkv-corr
+  SN II-pec: v19-2016bkv-corr
+  SN IIb: v19-2016gkg-corr
+  SN IIb?: v19-2016gkg-corr
+  SN IIb-pec: v19-2016gkg-corr
+  SN IIL: nugent-sn2l
+  SN IIn: nugent-sn2n
+  SN IIn?: nugent-sn2n
+  SN IIP: nugent-sn2p

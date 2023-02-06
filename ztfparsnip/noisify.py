@@ -2,16 +2,18 @@
 # Author: Alice Townsend (alice.townsend@hu-berlin.de)
 # License: BSD-3-Clause
 
-import os, numpy, logging
-import re, os, glob
+import os, numpy, logging, re, os, glob, random
+
 import numpy as np
 import pandas as pd
 import sncosmo
 import lcdata
-import random
+
 from astropy.table import Table
 from astropy.cosmology import Planck18 as cosmo
 from copy import copy
+
+from ztfparsnip import io
 
 delta_z: float = 0.1
 n_sim: float = 10
@@ -165,51 +167,8 @@ def get_noisified_data(lc_table, delta_z, n_sim):
 
 def get_k_correction(lc_table, z_list):
     # map source to a template on sncosmo
-    type_template_map_sncosmo = {
-        # All the types of transient are:
-        # ['AGN' 'AGN?' 'CLAGN' 'CV' 'CV?' 'Ca-rich' 'FBOT' 'ILRT' 'LBV' 'LRN'
-        #'LRN?' 'NLS1' 'NLSy1?' 'QSO' 'SLSN-I' 'SLSN-I.5' 'SLSN-I?' 'SLSN-II'
-        #'SN II' 'SN II-pec' 'SN II?' 'SN IIP' 'SN IIb' 'SN IIb-pec' 'SN IIb?'
-        #'SN IIn' 'SN IIn?' 'SN Ia' 'SN Ia-03fg' 'SN Ia-91T' 'SN Ia-91bg'
-        #'SN Ia-91bg?' 'SN Ia-CSM' 'SN Ia-CSM?' 'SN Ia-norm' 'SN Ia-pec' 'SN Ia?'
-        #'SN Iax' 'SN Ib' 'SN Ib/c' 'SN Ib/c?' 'SN Ib?' 'SN Ibn' 'SN Ibn?' 'SN Ic'
-        #'SN Ic-BL' 'SN Ic-BL?' 'SN Ic?' 'SN Icn' 'Seyfert' 'TDE' 'afterglow'
-        #'blazar' 'bogus' 'bogus?' 'duplicate' 'galaxy' 'nova' 'nova?']
-        # To add: [SLSN-I' 'SLSN-I.5'
-        #         'SLSN-I?' 'SLSN-II' 'TDE']
-        "SN Ia": "salt2",
-        "SN Ia?": "salt2",
-        "SN Iax": "salt2",
-        "SN Ia-CSM": "salt2",
-        "SN Ia-CSM?": "salt2",
-        "SN Ia-pec": "salt2",
-        "SN Ia-03fg": "salt2",
-        "SN Ia-norm": "salt2",
-        "SN Ia-91T": "nugent-sn91t",
-        "SN Ia-91bg": "nugent-sn91bg",
-        "SN Ia-91bg?": "nugent-sn91bg",
-        "SN Ib": "v19-iptf13bvn-corr",
-        "SN Ib?": "v19-iptf13bvn-corr",
-        "SN Ibn": "v19-iptf13bvn-corr",
-        "SN Ibn?": "v19-iptf13bvn-corr",
-        "SN Ib/c": "nugent-sn1bc",
-        "SN Ib/c?": "nugent-sn1bc",
-        "SN Ic": "v19-2013ge-corr",
-        "SN Ic?": "v19-2013ge-corr",
-        "SN Icn": "v19-2013ge-corr",
-        "SN Ic-BL": "v19-2012ap-corr",
-        "SN Ic-BL?": "v19-2012ap-corr",
-        "SN II": "v19-2016bkv-corr",
-        "SN II?": "v19-2016bkv-corr",
-        "SN II-pec": "v19-2016bkv-corr",
-        "SN IIb": "v19-2016gkg-corr",
-        "SN IIb?": "v19-2016gkg-corr",
-        "SN IIb-pec": "v19-2016gkg-corr",
-        "SN IIL": "nugent-sn2l",
-        "SN IIn": "nugent-sn2n",
-        "SN IIn?": "nugent-sn2n",
-        "SN IIP": "nugent-sn2p",
-    }
+    config = io.load_config()
+    type_template_map_sncosmo = config["sncosmo_templates"]
 
     if lc_table.meta["bts_class"] in type_template_map_sncosmo.keys():
         template = type_template_map_sncosmo[lc_table.meta["bts_class"]]
