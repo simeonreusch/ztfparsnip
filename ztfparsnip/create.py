@@ -4,14 +4,26 @@
 
 import os, numpy, logging
 
+from ztfparsnip import io
 
-class CreateLightcurves:
-    """
-    Class to read in BTS sample and create a set of augmented lightcurves
-    """
 
-    def __init__(self, weights: None | dict):
+class CreateLightcurves(object):
+    """
+    This is the parent class for the ZTF nuclear transient sample"""
+
+    def __init__(
+        self,
+        weights={},
+        bts_baseline_dir: str | None = None,
+    ):
         super(CreateLightcurves, self).__init__()
+        self.logger = logging.getLogger(__name__)
+        self.logger.debug("Creating lightcurves")
         self.weights = weights
 
-    print(self.weights)
+        if bts_baseline_dir is None:
+            self.bl_dir = io.BTS_LC_BASELINE_DIR
+        else:
+            self.bl_dir = bts_baseline_dir
+
+        print(self.bl_dir)
