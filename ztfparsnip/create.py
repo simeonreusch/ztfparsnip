@@ -24,6 +24,4 @@ class CreateLightcurves(object):
         if bts_baseline_dir is None:
             self.bl_dir = io.BTS_LC_BASELINE_DIR
         else:
-            self.bl_dir = bts_baseline_dir
-
-        print(self.bl_dir)
+            self.lc_dir = bts_baseline_dir
