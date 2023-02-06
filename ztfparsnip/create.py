@@ -60,39 +60,58 @@ class CreateLightcurves(object):
                 header["simple_class"] = simple_class
                 yield lc, header
             else:
-                yield None, None
+                yield None, header
 
     def noisify_sample(self, train_dir: str = None):
         """
         Noisify the sample
         """
         failed = []
+        success = []
+
         bts_lc_list = []
         noisy_lc_list = []
         for lc, header in self.get_lightcurves():
             if lc is not None:
                 if header.get("bts_class") is not None:
-                    bts_lc, noisy_lc = noisify.noisify_lcs(lc, header)
+                    bts_lc, noisy_lc = noisify.noisify_lightcurve(lc, header)
                     if bts_lc is not None:
-                        bts_lc_list.extend(bts_lc)
+                        bts_lc_list.append(bts_lc)
                         noisy_lc_list.extend(noisy_lc)
+                        success.append(1)
+                    else:
+                        failed.append(header.get("name"))
                 else:
                     failed.append(header.get("name"))
+            else:
+                failed.append(header.get("name"))
 
         lc_list = [*bts_lc_list, *noisy_lc_list]
 
-        # Save h5 files
         if train_dir is None:
             train_dir = io.TRAIN_DATA
         else:
             if not os.path.exists(train_dir):
                 os.makedirs(train_dir)
 
+        self.logger.info(f"Erroneous data for {len(failed)} original lightcurves")
+        self.logger.info(f"Ran {len(success)} original lightcurves")
+
+        self.logger.info(
+            f"Generated {len(noisy_lc_list)} noisy lightcurves from {len(bts_lc_list)} original lightcurves"
+        )
+
+        # Save h5 files
         dataset_h5_bts = lcdata.from_light_curves(bts_lc_list)
         dataset_h5_noisy = lcdata.from_light_curves(noisy_lc_list)
         dataset_h5_combined = lcdata.from_light_curves(lc_list)
-        dataset_h5_bts.write_hdf5(os.path.join(train_dir, f"{self.name}_bts.h5"))
-        dataset_h5_noisy.write_hdf5(os.path.join(train_dir, f"{self.name}_noisy.h5"))
+
+        dataset_h5_bts.write_hdf5(
+            os.path.join(train_dir, f"{self.name}_bts.h5"), overwrite=True
+        )
+        dataset_h5_noisy.write_hdf5(
+            os.path.join(train_dir, f"{self.name}_noisy.h5"), overwrite=True
+        )
         dataset_h5_combined.write_hdf5(
-            os.path.join(train_dir, f"{self.name}_combined.h5")
+            os.path.join(train_dir, f"{self.name}_combined.h5"), overwrite=True
         )

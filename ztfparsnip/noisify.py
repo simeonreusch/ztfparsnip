@@ -19,9 +19,6 @@ n_sim: float = 10
 SN_threshold: float = 5.0
 n_det_threshold: float = 5.0
 
-bts_lcs = []
-noisy_lcs = []
-
 
 def get_astropy_table(df, headervals, remove_poorconditions=True, phase_lim=True):
 
@@ -249,15 +246,17 @@ def get_k_correction(lc_table, z_list):
     return kcorr_mag_list, kcorr_flux_list
 
 
-def noisify_lcs(table, headervals):
+def noisify_lightcurve(table, headervals):
     """
     Noisify a lightcurve generated in create.py
     """
+    noisy_lcs = []
 
     table = get_astropy_table(table, headervals)
+
     if table is None:
         return None, None
-    bts_lcs.append(table)
+
     # -------- Noisification -------- #
     new_table_list, sim_z_list = get_noisified_data(table, delta_z, n_sim)
     delta_m_list, delta_f_list = get_k_correction(table, sim_z_list)
@@ -280,4 +279,4 @@ def noisify_lcs(table, headervals):
             if count_sn[0] >= n_det_threshold:
                 noisy_lcs.append(new_table)
 
-    return bts_lcs, noisy_lcs
+    return table, noisy_lcs
