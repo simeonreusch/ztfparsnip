@@ -60,9 +60,6 @@ simpleclasses:
     - bogus
     - duplicate
     - bogus?
-    - CV
-    - varstar
-    - rock
 
   unclass:
     - "-"
@@ -70,33 +67,12 @@ simpleclasses:
 
   other:
     - FBOT
+    - rock
     - LRN
     - ILRT
     - Ca-rich
     - LRN?
     - afterglow
-    - Galaxy
-
-  agn_star:
-    - nova
-    - CV?
-    - varstar
-    - Varstar
-    - AGN
-    - QSO
-    - nova?
-    - star
-    - LBV
-    - NLSy1?
-    - NLSy1
-    - CLAGN
-    - AGN?
-    - NLS1
-    - galaxy
-    - Seyfert
-    - AM CVn
-    - var
-    - blazar
 
   agn:
     - AGN

@@ -5,6 +5,7 @@
 import os, numpy, logging
 
 from ztfparsnip import io
+from ztfparsnip.noisify import noisify
 
 
 class CreateLightcurves(object):
@@ -28,6 +29,16 @@ class CreateLightcurves(object):
 
         self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir)
         self.config = io.load_config()
+        self.get_simple_class("TDE")
+
+    def get_simple_class(self, bts_class: str) -> str:
+        """
+        Look in the config file to get the simple classification for a transient
+        """
+        for key, val in self.config["simpleclasses"].items():
+            for entry in self.config["simpleclasses"][key]:
+                if bts_class == entry:
+                    return key
 
     def get_lightcurves(self):
         """
@@ -36,4 +47,13 @@ class CreateLightcurves(object):
         for ztfid in self.ztfids:
             lc = io.get_ztfid_dataframe(ztfid=ztfid, lc_dir=self.lc_dir)
             header = io.get_ztfid_header(ztfid=ztfid, lc_dir=self.lc_dir)
+            bts_class = header.get("bts_class")
+            print(bts_class)
             yield lc, header
+
+    def noisify_sample(self):
+        """
+        Noisify the sample
+        """
+        for lc, header in self.get_lightcurves():
+            noisify(lc, header)
