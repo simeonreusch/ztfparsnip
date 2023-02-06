@@ -12,8 +12,6 @@ import lcdata
 
 
 class CreateLightcurves(object):
-
-    output_filename:str = 'test1'
     """
     This is the parent class for the ZTF nuclear transient sample"""
 
@@ -21,11 +19,13 @@ class CreateLightcurves(object):
         self,
         weights={},
         bts_baseline_dir: str | None = None,
+        name: str = "train",
     ):
         super(CreateLightcurves, self).__init__()
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Creating lightcurves")
         self.weights = weights
+        self.name = name
 
         if bts_baseline_dir is None:
             self.lc_dir = io.BTS_LC_BASELINE_DIR
@@ -45,36 +45,54 @@ class CreateLightcurves(object):
                     return key
         return "unclass"
 
-    def get_lightcurves(self):
+    def get_lightcurves(self, start: int = 0, end: int | None = None):
         """
         Generator to read a dataframes and headers
         """
-        for ztfid in tqdm(self.ztfids, total=len(self.ztfids)):
-            lc = io.get_ztfid_dataframe(ztfid=ztfid, lc_dir=self.lc_dir)
-            header = io.get_ztfid_header(ztfid=ztfid, lc_dir=self.lc_dir)
-            bts_class = header.get("bts_class")
-            simple_class = self.get_simple_class(bts_class)
-            header["simple_class"] = simple_class
-            yield lc, header
+        if end is None:
+            end = len(self.ztfids)
 
-    def noisify_sample(self):
+        for ztfid in tqdm(self.ztfids[start:end], total=len(self.ztfids[start:end])):
+            lc, header = io.get_lightcurve(ztfid=ztfid, lc_dir=self.lc_dir)
+            if lc is not None:
+                bts_class = header.get("bts_class")
+                simple_class = self.get_simple_class(bts_class)
+                header["simple_class"] = simple_class
+                yield lc, header
+            else:
+                yield None, None
+
+    def noisify_sample(self, train_dir: str = None):
         """
         Noisify the sample
         """
+        failed = []
         bts_lc_list = []
         noisy_lc_list = []
         for lc, header in self.get_lightcurves():
-            bts_lc, noisy_lc = noisify.noisify_lcs(lc, header)
-            bts_lc_list.extend(bts_lc)
-            noisy_lc_list.extend(noisy_lc)
+            if lc is not None:
+                if header.get("bts_class") is not None:
+                    bts_lc, noisy_lc = noisify.noisify_lcs(lc, header)
+                    if bts_lc is not None:
+                        bts_lc_list.extend(bts_lc)
+                        noisy_lc_list.extend(noisy_lc)
+                else:
+                    failed.append(header.get("name"))
 
-        lc_list = [*bts_lc_list,*noisy_lc_list]
-        
+        lc_list = [*bts_lc_list, *noisy_lc_list]
+
         # Save h5 files
-        path = os.getcwd()
+        if train_dir is None:
+            train_dir = io.TRAIN_DATA
+        else:
+            if not os.path.exists(train_dir):
+                os.makedirs(train_dir)
+
         dataset_h5_bts = lcdata.from_light_curves(bts_lc_list)
         dataset_h5_noisy = lcdata.from_light_curves(noisy_lc_list)
         dataset_h5_combined = lcdata.from_light_curves(lc_list)
-        dataset_h5_bts.write_hdf5(path + self.output_filename + '_bts.h5')
-        dataset_h5_noisy.write_hdf5(path + self.output_filename + '_noisy.h5')
-        dataset_h5_combined.write_hdf5(path + self.output_filename + '_combined.h5')
+        dataset_h5_bts.write_hdf5(os.path.join(train_dir, f"{self.name}_bts.h5"))
+        dataset_h5_noisy.write_hdf5(os.path.join(train_dir, f"{self.name}_noisy.h5"))
+        dataset_h5_combined.write_hdf5(
+            os.path.join(train_dir, f"{self.name}_combined.h5")
+        )

@@ -15,8 +15,12 @@ if os.getenv("ZTFDATA"):
     BTS_LC_BASELINE_DIR = os.path.join(
         str(os.getenv("ZTFDATA")), "nuclear_sample", "BTS", "baseline"
     )
-    if not os.path.exists(BTS_LC_BASELINE_DIR):
-        os.makedirs(path)
+    TRAIN_DATA = os.path.join(
+        str(os.getenv("ZTFDATA")), "nuclear_sample", "BTS", "train"
+    )
+    for d in [BTS_LC_BASELINE_DIR, TRAIN_DATA]:
+        if not os.path.exists(d):
+            os.makedirs(d)
 
 else:
     raise ValueError(
@@ -60,6 +64,21 @@ def add_mag(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def get_lightcurve(
+    ztfid: str, lc_dir: str | None = None, enforce_z: bool = True
+) -> (None | pd.DataFrame, None | dict):
+    if is_valid_ztfid(ztfid):
+        if lc_dir is None:
+            lc_dir = BTS_LC_BASELINE_DIR
+    lc = get_ztfid_dataframe(ztfid=ztfid, lc_dir=lc_dir)
+    header = get_ztfid_header(ztfid=ztfid, lc_dir=lc_dir)
+
+    if enforce_z and header.get("bts_z") == "-":
+        return None, None
+
+    return lc, header
+
+
 def get_ztfid_dataframe(ztfid: str, lc_dir: str | None = None) -> pd.DataFrame | None:
     """
     Get the Pandas Dataframe of a single transient
@@ -67,11 +86,11 @@ def get_ztfid_dataframe(ztfid: str, lc_dir: str | None = None) -> pd.DataFrame |
     if is_valid_ztfid(ztfid):
         if lc_dir is None:
             lc_dir = BTS_LC_BASELINE_DIR
-
         filepath = os.path.join(lc_dir, f"{ztfid}_bl.csv")
 
         try:
             df = pd.read_csv(filepath, comment="#", index_col=0)
+            df["jd"] = df.obsmjd + 2400000.5
             df_with_mag = add_mag(df)
             return df_with_mag
         except FileNotFoundError:

@@ -58,7 +58,7 @@ class Train:
     def run(self, threads: int = 10, outfile: str | None = None):
         """Run the actual train command"""
         if outfile is None:
-            model_dir = os.path.abspath("model")
+            model_dir = os.path.abspath("models")
             if not os.path.exists(model_dir):
                 os.makedirs(model_dir)
             outfile = os.path.join(
