@@ -2,7 +2,7 @@
 # Author: Simeon Reusch (simeon.reusch@desy.de)
 # License: BSD-3-Clause
 
-import os, re, logging
+import os, re, logging, yaml
 
 from typing import List
 
@@ -50,7 +50,7 @@ def add_mag(df: pd.DataFrame) -> pd.DataFrame:
         * 3630.78
     )
 
-    # convert to mag
+    # convert to magsubl
     abmag = -2.5 * np.log10(flux / 3630.78)
     abmag_err = 2.5 / np.log(10) * flux_err / flux
 
@@ -135,3 +135,17 @@ def get_all_ztfids(lc_dir: str | None = None) -> List[str]:
                 ztfid = name[:-4]
             ztfids.append(ztfid)
     return ztfids
+
+
+def load_config(config_path: str | None = None) -> dict:
+    """
+    Loads the user-specific config
+    """
+    if not config_path:
+        current_dir = os.path.dirname(__file__)
+        config_path = os.path.join(current_dir, "..", "config.yaml")
+
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+
+    return config

@@ -1,0 +1,123 @@
+simpleclasses:
+  sn_ia:
+    - Ia
+    - Ia-pec
+    - Ia-02cx
+    - Ia-91b
+    - Ia-18byg
+    - Ia-CSM
+    - Type I
+    - Ia-CSM?
+    - Ia-03fg
+    - Ia-91bg
+    - Ia-91bg?
+    - Ia-91T
+    - Ia-norm
+    - Iax
+    - Ia-03fg
+    - Ia?
+    - Ia-91T-like
+    - Ia-pec
+    - Iax[02cx-like]
+
+  tde:
+    - Tidal Disruption Event
+    - TDE
+
+  sn_other:
+    - IIP
+    - II
+    - Type II
+    - IIb?
+    - IIn
+    - Ibn?
+    - Supernova
+    - SLSN-I
+    - Ic-BL?
+    - Ic
+    - Ic-SLSN
+    - SLSN-II
+    - Ib/c?
+    - Ic?
+    - IIn?
+    - Ib
+    - Ic-BL
+    - SLSN I
+    - Ib/c
+    - IIb
+    - II-norm
+    - Ibn
+    - SLSN-I?
+    - II?
+    - IIb-pec
+    - SLSN-I.5
+    - Icn
+    - Ib?
+    - I
+    - SN
+
+  bogus:
+    - bogus
+    - duplicate
+    - bogus?
+    - CV
+    - varstar
+    - rock
+
+  unclass:
+    - "-"
+    - None
+
+  other:
+    - FBOT
+    - LRN
+    - ILRT
+    - Ca-rich
+    - LRN?
+    - afterglow
+    - Galaxy
+
+  agn_star:
+    - nova
+    - CV?
+    - varstar
+    - Varstar
+    - AGN
+    - QSO
+    - nova?
+    - star
+    - LBV
+    - NLSy1?
+    - NLSy1
+    - CLAGN
+    - AGN?
+    - NLS1
+    - galaxy
+    - Seyfert
+    - AM CVn
+    - var
+    - blazar
+
+  agn:
+    - AGN
+    - QSO
+    - AGN?
+    - NLSy1?
+    - NLSy
+    - CLAGN
+    - AGN?
+    - NLS1
+    - Seyfert
+    - blazar
+    - galaxy
+
+  star:
+    - nova
+    - AM CVn
+    - CV?
+    - varstar
+    - Varstar
+    - nova?
+    - star
+    - LBV
+    - var

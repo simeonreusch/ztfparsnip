@@ -27,6 +27,7 @@ class CreateLightcurves(object):
             self.lc_dir = bts_baseline_dir
 
         self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir)
+        self.config = io.load_config()
 
     def get_lightcurves(self):
         """
