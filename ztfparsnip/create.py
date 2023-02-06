@@ -66,8 +66,7 @@ class CreateLightcurves(object):
         """
         Noisify the sample
         """
-        failed = []
-        success = []
+        failed = {"no_z": [], "no_class": [], "no_lc_after_cuts": []}
 
         bts_lc_list = []
         noisy_lc_list = []
@@ -78,13 +77,12 @@ class CreateLightcurves(object):
                     if bts_lc is not None:
                         bts_lc_list.append(bts_lc)
                         noisy_lc_list.extend(noisy_lc)
-                        success.append(1)
                     else:
-                        failed.append(header.get("name"))
+                        failed["no_lc_after_cuts"].append(header.get("name"))
                 else:
-                    failed.append(header.get("name"))
+                    failed["no_class"].append(header.get("name"))
             else:
-                failed.append(header.get("name"))
+                failed["no_z"].append(header.get("name"))
 
         lc_list = [*bts_lc_list, *noisy_lc_list]
 
@@ -95,7 +93,10 @@ class CreateLightcurves(object):
                 os.makedirs(train_dir)
 
         self.logger.info(f"Erroneous data for {len(failed)} original lightcurves")
-        self.logger.info(f"Ran {len(success)} original lightcurves")
+
+        self.logger.info(
+            f"{len(failed['no_z'])} items: no redshift | {len(failed['no_lc_after_cuts'])} items: lc does not survive cuts | {len(failed['no_class'])} items: no classification"
+        )
 
         self.logger.info(
             f"Generated {len(noisy_lc_list)} noisy lightcurves from {len(bts_lc_list)} original lightcurves"
