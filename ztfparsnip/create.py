@@ -46,7 +46,7 @@ class CreateLightcurves(object):
         """
         Generator to read a dataframes and headers
         """
-        for ztfid in self.ztfids:
+        for ztfid in tqdm(self.ztfids, total=len(self.ztfids)):
             lc = io.get_ztfid_dataframe(ztfid=ztfid, lc_dir=self.lc_dir)
             header = io.get_ztfid_header(ztfid=ztfid, lc_dir=self.lc_dir)
             bts_class = header.get("bts_class")
