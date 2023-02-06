@@ -29,8 +29,10 @@ class CreateLightcurves(object):
         self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir)
 
     def get_lightcurves(self):
+        """
+        Generator to read a dataframes and headers
+        """
         for ztfid in self.ztfids:
-            print(ztfid)
             lc = io.get_ztfid_dataframe(ztfid=ztfid, lc_dir=self.lc_dir)
             header = io.get_ztfid_header(ztfid=ztfid, lc_dir=self.lc_dir)
             yield lc, header
