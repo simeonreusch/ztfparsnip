@@ -22,6 +22,15 @@ class CreateLightcurves(object):
         self.weights = weights
 
         if bts_baseline_dir is None:
-            self.bl_dir = io.BTS_LC_BASELINE_DIR
+            self.lc_dir = io.BTS_LC_BASELINE_DIR
         else:
             self.lc_dir = bts_baseline_dir
+
+        self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir)
+
+    def get_lightcurves(self):
+        for ztfid in self.ztfids:
+            print(ztfid)
+            lc = io.get_ztfid_dataframe(ztfid=ztfid, lc_dir=self.lc_dir)
+            header = io.get_ztfid_header(ztfid=ztfid, lc_dir=self.lc_dir)
+            yield lc, header

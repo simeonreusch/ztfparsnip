@@ -2,9 +2,14 @@
 # Author: Simeon Reusch (simeon.reusch@desy.de)
 # License: BSD-3-Clause
 
-import os, re
+import os, re, logging
+
+from typing import List
 
 import pandas as pd
+import numpy as np
+
+logger = logging.getLogger(__name__)
 
 if os.getenv("ZTFDATA"):
     BTS_LC_BASELINE_DIR = os.path.join(
@@ -30,6 +35,27 @@ def is_valid_ztfid(ztfid: str) -> bool:
         return False
 
 
+def add_mag(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add mag and magerr
+    """
+    F0 = 10 ** (df.magzp / 2.5)
+    F0_err = F0 / 2.5 * np.log(10) * df.magzpunc
+    flux = df.ampl_corr / F0 * 3630.78
+    flux_err = (
+        np.sqrt((df.ampl_err_corr / F0) ** 2 + (df.ampl_corr * F0_err / F0**2) ** 2)
+        * 3630.78
+    )
+
+    abmag = -2.5 * np.log10(flux / 3630.78)
+    abmag_err = 2.5 / np.log(10) * flux_err / flux
+
+    df["magpsf"] = abmag
+    df["sigmapsf"] = abmag_err
+
+    return df
+
+
 def get_ztfid_dataframe(ztfid: str, lc_dir: str | None = None) -> pd.DataFrame | None:
     """
     Get the Pandas Dataframe of a single transient
@@ -41,8 +67,9 @@ def get_ztfid_dataframe(ztfid: str, lc_dir: str | None = None) -> pd.DataFrame |
         filepath = os.path.join(lc_dir, f"{ztfid}_bl.csv")
 
         try:
-            df = pd.read_csv(filepath, comment="#")
-            return df
+            df = pd.read_csv(filepath, comment="#", index_col=0)
+            df_with_mag = add_mag(df)
+            return df_with_mag
         except FileNotFoundError:
             logger.warn(f"No file found for {ztfid}. Check the ID.")
             return None
@@ -86,3 +113,21 @@ def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
             return None
     else:
         raise ValueError(f"{ztfid} is not a valid ZTF ID")
+
+
+def get_all_ztfids(lc_dir: str | None = None) -> List[str]:
+    """
+    Checks the lightcurve folder and gets all ztfids
+    """
+    if lc_dir is None:
+        lc_dir = BTS_LC_BASELINE_DIR
+
+    ztfids = []
+    for name in os.listdir(lc_dir):
+        if name[-4:] == ".csv":
+            if "_bl" in name[:-4]:
+                ztfid = name[:-7]
+            else:
+                ztfid = name[:-4]
+            ztfids.append(ztfid)
+    return ztfids
