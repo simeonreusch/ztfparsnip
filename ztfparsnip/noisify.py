@@ -23,13 +23,13 @@ SN_threshold: float = 5.0
 n_det_threshold: float = 5.0
 
 
-def get_astropy_table(df, header, remove_poorconditions=True, phase_lim=True):
+def get_astropy_table(df, header, remove_poor_conditions=True, phase_lim=True):
 
     """
     Generate astropy table from the provided lightcurve.
 
     """
-    if remove_poorconditions:
+    if remove_poor_conditions:
         magpsf = df["magpsf"][df["pass"] == 1]
         sigmapsf = df["sigmapsf"][df["pass"] == 1]
         fid = df["filterid"][df["pass"] == 1]
@@ -54,15 +54,20 @@ def get_astropy_table(df, header, remove_poorconditions=True, phase_lim=True):
             "SLSN-I?",
             "SLSN-II",
             "TDE",
-            "Baratheon",
         ]:
-            mask_phase = ((jd - float(header["bts_peak_jd"])) < 200.0) & (
-                (jd - float(header["bts_peak_jd"])) > -50.0
-            )
+            phase_min = -50
+            phase_max = 200
+        elif header["bts_class"] == "Baratheon":
+            phase_min = -50
+            phase_max = 365
         else:
-            mask_phase = ((jd - float(header["bts_peak_jd"])) < 50.0) & (
-                (jd - float(header["bts_peak_jd"])) > -30.0
-            )
+            phase_min = -30
+            phase_max = 50
+
+        mask_phase = ((jd - float(header["bts_peak_jd"])) < phase_max) & (
+            (jd - float(header["bts_peak_jd"])) > phase_min
+        )
+
         jd = jd[mask_phase]
         magpsf = magpsf[mask_phase]
         sigmapsf = sigmapsf[mask_phase]
