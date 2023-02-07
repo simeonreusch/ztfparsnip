@@ -141,6 +141,12 @@ def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
         raise ValueError(f"{ztfid} is not a valid ZTF ID")
 
 
+def generate_headerstring(headerdict) -> str:
+    """
+    Generate a string of the header from a dict, meant to be written to a csv file
+    """
+
+
 def get_all_ztfids(lc_dir: str | None = None) -> List[str]:
     """
     Checks the lightcurve folder and gets all ztfids
