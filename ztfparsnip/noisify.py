@@ -26,8 +26,8 @@ n_det_threshold: float = 5.0
 def get_astropy_table(df, header, remove_poor_conditions=True, phase_lim=True):
 
     """
-    Generate astropy table from the provided lightcurve.
-
+    Generate astropy table from the provided lightcurve and apply
+    phase limits
     """
     if remove_poor_conditions:
         magpsf = df["magpsf"][df["pass"] == 1]
@@ -239,6 +239,7 @@ def noisify_lightcurve(table, header):
     # -------- Noisification -------- #
     new_table_list, sim_z_list = get_noisified_data(table, delta_z, n_sim)
     delta_m_list, delta_f_list = get_k_correction(table, sim_z_list)
+
     # Add k correction
     if delta_m_list != None:
         for i in range(len(new_table_list)):

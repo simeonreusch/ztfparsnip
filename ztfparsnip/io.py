@@ -22,6 +22,8 @@ if os.getenv("ZTFDATA"):
         if not os.path.exists(d):
             os.makedirs(d)
 
+    BTS_HEADERS = os.path.join(BTS_LC_BASELINE_DIR, "headers.json")
+
 else:
     raise ValueError(
         "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See github.com/mickaelrigault/ztfquery"
@@ -65,7 +67,7 @@ def add_mag(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_lightcurve(
-    ztfid: str, lc_dir: str | None = None, enforce_z: bool = True
+    ztfid: str, lc_dir: str | None = None
 ) -> (None | pd.DataFrame, None | dict):
     if is_valid_ztfid(ztfid):
         if lc_dir is None:
@@ -73,7 +75,7 @@ def get_lightcurve(
     lc = get_ztfid_dataframe(ztfid=ztfid, lc_dir=lc_dir)
     header = get_ztfid_header(ztfid=ztfid, lc_dir=lc_dir)
 
-    if enforce_z and header.get("bts_z") == "-":
+    if header.get("bts_z") == "-":
         # logger.warn(f"{ztfid}: no redshift")
         return None, header
 

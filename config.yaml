@@ -20,6 +20,9 @@ simpleclasses:
     - Ia-pec
     - Iax[02cx-like]
 
+  baratheon:
+    - Baratheon
+
   tde:
     - Tidal Disruption Event
     - TDE

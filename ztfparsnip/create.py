@@ -2,7 +2,9 @@
 # Author: Lightcurve creation code by Alice Townsend (alice.townsend@hu-berlin.de)
 # License: BSD-3-Clause
 
-import os, numpy, logging
+import os, numpy, logging, json
+
+from typing import Any
 
 from tqdm import tqdm
 
@@ -17,9 +19,10 @@ class CreateLightcurves(object):
 
     def __init__(
         self,
-        weights={},
+        weights: dict[Any] = {},
         bts_baseline_dir: str | None = None,
         name: str = "train",
+        reprocess_headers: bool = False,
     ):
         super(CreateLightcurves, self).__init__()
         self.logger = logging.getLogger(__name__)
@@ -35,6 +38,8 @@ class CreateLightcurves(object):
         self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir)
         self.config = io.load_config()
 
+        self.get_headers(reprocess=reprocess_headers)
+
     def get_simple_class(self, bts_class: str) -> str:
         """
         Look in the config file to get the simple classification for a transient
@@ -47,7 +52,7 @@ class CreateLightcurves(object):
 
     def get_lightcurves(self, start: int = 0, end: int | None = None):
         """
-        Generator to read a dataframes and headers
+        Read dataframes and headers
         """
         if end is None:
             end = len(self.ztfids)
@@ -62,7 +67,59 @@ class CreateLightcurves(object):
             else:
                 yield None, header
 
-    def noisify_sample(self, train_dir: str = None):
+    def get_headers(self, reprocess: bool = False):
+        """
+        Read headers only
+        """
+        headers_raw = {}
+        self.headers = {}
+
+        if not os.path.isfile(io.BTS_HEADERS) or reprocess:
+
+            for ztfid in tqdm(self.ztfids, total=len(self.ztfids)):
+                _, header = io.get_lightcurve(ztfid=ztfid, lc_dir=self.lc_dir)
+                header["simple_class"] = self.get_simple_class(header.get("bts_class"))
+                headers_raw.update({header.get("name"): header})
+
+            with open(io.BTS_HEADERS, "w") as f:
+                f.write(json.dumps(headers_raw))
+
+        else:
+            with open(io.BTS_HEADERS, "r") as f:
+                headers_raw = json.load(f)
+
+        for k, v in headers_raw.items():
+            if (z := v.get("bts_z")) != "-" and z is not None:
+                self.headers.update({k: v})
+
+    def select(self, seed=None):
+        """
+        Select initial lightcurves based on weights and classifications
+        """
+        class_stats = {}
+
+        if len(self.weights) == 0:
+            raise ValueError(
+                "You have to define weights. Pass the weights dictionary to the CreateLightcurves class"
+            )
+
+        # Check if we do relative amounts of lightcurves or absolute
+        weight_values = list(self.weights.values())
+        if isinstance(weight_values[0], float):
+            for val in weight_values:
+                assert isinstance(val, float)
+            relative_weighting = True
+        else:
+            for val in weight_values:
+                assert isinstance(val, int)
+            relative_weighting = False
+
+        # Now we count classes
+        for c in self.config["simpleclasses"]:
+            for entry in self.headers.values():
+                print(entry.get("simple_class"))
+
+    def noisify(self, train_dir: str = None):
         """
         Noisify the sample
         """
@@ -70,7 +127,7 @@ class CreateLightcurves(object):
 
         bts_lc_list = []
         noisy_lc_list = []
-        for lc, header in self.get_lightcurves(10):
+        for lc, header in self.get_lightcurves(1):
             if lc is not None:
                 if header.get("bts_class") is not None:
                     bts_lc, noisy_lc = noisify.noisify_lightcurve(lc, header)
