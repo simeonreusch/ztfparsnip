@@ -102,7 +102,7 @@ def get_astropy_table(df, header, remove_poor_conditions=True, phase_lim=True):
     return phot_tab
 
 
-def get_noisified_data(lc_table, delta_z, multiplier):
+def get_noisified_data(lc_table, delta_z):
 
     this_lc = copy(lc_table)
     this_lc = this_lc[this_lc["flux"] > 0.0]
@@ -120,58 +120,57 @@ def get_noisified_data(lc_table, delta_z, multiplier):
     noisy_lc_list = []
     z_list_update = []
 
-    while len(z_list_update) < multiplier:
+    # while len(z_list_update) < multiplier:
 
-        new_z = random.choice(z_list)
+    new_z = random.choice(z_list)
 
-        delta_m = cosmo.distmod(new_z) - cosmo.distmod(truez)
-        flux_new = 10 ** ((25 - mag - delta_m.value) / 2.5)
-        scale = (
-            cosmo.luminosity_distance(truez) ** 2
-            / cosmo.luminosity_distance(new_z) ** 2
+    delta_m = cosmo.distmod(new_z) - cosmo.distmod(truez)
+    flux_new = 10 ** ((25 - mag - delta_m.value) / 2.5)
+    scale = (
+        cosmo.luminosity_distance(truez) ** 2 / cosmo.luminosity_distance(new_z) ** 2
+    )
+    df_f_old = fluxerr_old / flux_old
+    df_f_new = 1 / scale * df_f_old
+
+    flux_obs = flux_new + np.random.normal(scale=np.sqrt(flux_new))
+    fluxerr_obs = flux_new * df_f_new
+
+    # mag_new = -2.5 * np.log10(flux_obs) + zp
+    mag_new = flux_to_mag(flux_obs.value, zp)
+    magerr_new = np.abs((2.5 * np.log(10)) * (fluxerr_obs / flux_obs))
+    jd_new = this_lc["jd"].data
+    band_new = this_lc["band"].data
+    zp_new = this_lc["zp"].data
+    zpsys_new = this_lc["zpsys"].data
+
+    if len(mag_new) > 0:
+        phot = {
+            "jd": jd_new,
+            "flux": flux_obs,
+            "fluxerr": fluxerr_obs,
+            "magpsf": mag_new,
+            "sigmapsf": magerr_new,
+            "band": band_new,
+            "zp": zp_new,
+            "zpsys": zpsys_new,
+        }
+        new_lc = Table(
+            phot,
+            names=(
+                "jd",
+                "flux",
+                "fluxerr",
+                "magpsf",
+                "sigmapsf",
+                "band",
+                "zp",
+                "zpsys",
+            ),
+            meta=this_lc.meta,
         )
-        df_f_old = fluxerr_old / flux_old
-        df_f_new = 1 / scale * df_f_old
-
-        flux_obs = flux_new + np.random.normal(scale=np.sqrt(flux_new))
-        fluxerr_obs = flux_new * df_f_new
-
-        # mag_new = -2.5 * np.log10(flux_obs) + zp
-        mag_new = flux_to_mag(flux_obs.value, zp)
-        magerr_new = np.abs((2.5 * np.log(10)) * (fluxerr_obs / flux_obs))
-        jd_new = this_lc["jd"].data
-        band_new = this_lc["band"].data
-        zp_new = this_lc["zp"].data
-        zpsys_new = this_lc["zpsys"].data
-
-        if len(mag_new) > 0:
-            phot = {
-                "jd": jd_new,
-                "flux": flux_obs,
-                "fluxerr": fluxerr_obs,
-                "magpsf": mag_new,
-                "sigmapsf": magerr_new,
-                "band": band_new,
-                "zp": zp_new,
-                "zpsys": zpsys_new,
-            }
-            new_lc = Table(
-                phot,
-                names=(
-                    "jd",
-                    "flux",
-                    "fluxerr",
-                    "magpsf",
-                    "sigmapsf",
-                    "band",
-                    "zp",
-                    "zpsys",
-                ),
-                meta=this_lc.meta,
-            )
-            new_lc.meta["z"] = new_z
-            noisy_lc_list.append(new_lc)
-            z_list_update.append(new_z)
+        new_lc.meta["z"] = new_z
+        noisy_lc_list.append(new_lc)
+        z_list_update.append(new_z)
 
     return noisy_lc_list, z_list_update
 
@@ -238,26 +237,46 @@ def noisify_lightcurve(table, header, multiplier):
         return None, None
 
     # -------- Noisification -------- #
-    new_table_list, sim_z_list = get_noisified_data(table, delta_z, multiplier)
-    delta_m_list, delta_f_list = get_k_correction(table, sim_z_list)
+    res = []
+    res_counter = 0
+    n_iter = 0
+    while len(noisy_lcs) < (multiplier - 1):
+        new_table_list, sim_z_list = get_noisified_data(table, delta_z)
+        delta_m_list, delta_f_list = get_k_correction(table, sim_z_list)
 
-    # Add k correction
-    if delta_m_list != None:
-        for i in range(len(new_table_list)):
-            new_table_list[i]["magpsf"] = (
-                new_table_list[i]["magpsf"].data + delta_m_list[i]
+        # Add k correction
+        if delta_m_list != None:
+            for i in range(len(new_table_list)):
+                new_table_list[i]["magpsf"] = (
+                    new_table_list[i]["magpsf"].data + delta_m_list[i]
+                )
+                new_table_list[i]["flux"] = (
+                    new_table_list[i]["flux"].data + delta_f_list[i]
+                )
+        for new_table in new_table_list:
+            peak_idx = np.argmax(new_table["flux"])
+            sig_noise_df = pd.DataFrame(
+                data={"SN": np.abs(np.array(new_table["flux"] / new_table["fluxerr"]))}
             )
-            new_table_list[i]["flux"] = new_table_list[i]["flux"].data + delta_f_list[i]
-    for new_table in new_table_list:
-        peak_idx = np.argmax(new_table["flux"])
-        sig_noise_df = pd.DataFrame(
-            data={"SN": np.abs(np.array(new_table["flux"] / new_table["fluxerr"]))}
-        )
-        count_sn = sig_noise_df[sig_noise_df["SN"] > SN_threshold].count()
-        if (
-            new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]
-        ) > SN_threshold:
-            if count_sn[0] >= n_det_threshold:
-                noisy_lcs.append(new_table)
+            count_sn = sig_noise_df[sig_noise_df["SN"] > SN_threshold].count()
+            if (
+                new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]
+            ) > SN_threshold:
+                if count_sn[0] >= n_det_threshold:
+                    noisy_lcs.append(new_table)
+                    res.append(1)
+                    res_counter += 1
+                else:
+                    res.append(0)
+            else:
+                res.append(0)
+
+        """Prevent being stuck with a lightcurve never yielding a noisified one making the snt threshold. If it fails 50 times, we move on
+        """
+        if n_iter == 50:
+            if sum(res[-50:]) == 0:
+                return None, None
+
+        n_iter += 1
 
     return table, noisy_lcs

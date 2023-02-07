@@ -59,14 +59,19 @@ class CreateLightcurves(object):
                     return key
         return "unclass"
 
-    def get_lightcurves(self, start: int = 0, end: int | None = None):
+    def get_lightcurves(
+        self, start: int = 0, end: int | None = None, ztfids: list | None = None
+    ):
         """
         Read dataframes and headers
         """
         if end is None:
             end = len(self.ztfids)
 
-        for ztfid in tqdm(self.ztfids[start:end], total=len(self.ztfids[start:end])):
+        if ztfids is None:
+            ztfids = self.ztfids
+
+        for ztfid in tqdm(ztfids[start:end], total=len(ztfids[start:end])):
             lc, header = io.get_lightcurve(ztfid=ztfid, lc_dir=self.lc_dir)
             if lc is not None:
                 bts_class = header.get("bts_class")
@@ -147,7 +152,18 @@ class CreateLightcurves(object):
 
                 self.selection.update({c: multiplier})
 
+        expected = {}
+        total = 0
+        for k, v in self.selection.items():
+            exp = classes_available[k]["entries"] * v
+            expected.update({k: exp})
+            total += exp
+
         self.logger.info(f"Your selected weights: {self.selection}")
+
+        self.logger.info(f"Expected lightcurves: {expected} ({total} in total)")
+
+        self.classes_available = classes_available
 
     def noisify(self, train_dir: str = None):
         """
@@ -157,7 +173,11 @@ class CreateLightcurves(object):
 
         bts_lc_list = []
         noisy_lc_list = []
-        for lc, header in self.get_lightcurves(1):
+        generated = {k: 0 for (k, v) in self.selection.items()}
+
+        tdes = self.classes_available.get("tde").get("ztfids")
+
+        for lc, header in self.get_lightcurves():
             if lc is not None:
                 if (c := header.get("simple_class")) is not None:
                     if c in self.selection.keys():
@@ -168,12 +188,17 @@ class CreateLightcurves(object):
                         if bts_lc is not None:
                             bts_lc_list.append(bts_lc)
                             noisy_lc_list.extend(noisy_lc)
+                            total = len(noisy_lc_list) + len(bts_lc_list)
+                            this_round = 1 + len(noisy_lc)
+                            generated.update({c: generated[c] + this_round})
                         else:
                             failed["no_lc_after_cuts"].append(header.get("name"))
                 else:
                     failed["no_class"].append(header.get("name"))
             else:
                 failed["no_z"].append(header.get("name"))
+
+        print(generated)
 
         lc_list = [*bts_lc_list, *noisy_lc_list]
 
@@ -188,7 +213,7 @@ class CreateLightcurves(object):
         )
 
         self.logger.info(
-            f"Generated {len(noisy_lc_list)} noisy lightcurves from {len(bts_lc_list)} original lightcurves"
+            f"Generated {len(noisy_lc_list)+len(bts_lc_list)} lightcurves from {len(bts_lc_list)} original lightcurves"
         )
 
         # Save h5 files
