@@ -117,11 +117,12 @@ def get_noisified_data(lc_table, delta_z, multiplier):
     max_z = truez + delta_z
     z_list = np.random.power(4, 10000) * max_z
     z_list = z_list[z_list > truez]
-    z_selected = random.choices(z_list, k=multiplier)
     noisy_lc_list = []
     z_list_update = []
 
-    for new_z in z_selected:
+    while len(z_list_update) < multiplier:
+
+        new_z = random.choice(z_list)
 
         delta_m = cosmo.distmod(new_z) - cosmo.distmod(truez)
         flux_new = 10 ** ((25 - mag - delta_m.value) / 2.5)
