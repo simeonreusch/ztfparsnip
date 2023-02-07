@@ -96,7 +96,7 @@ class CreateLightcurves(object):
         """
         Select initial lightcurves based on weights and classifications
         """
-        class_stats = {}
+        classes_available = {}
 
         if len(self.weights) == 0:
             raise ValueError(
@@ -116,8 +116,27 @@ class CreateLightcurves(object):
 
         # Now we count classes
         for c in self.config["simpleclasses"]:
+            classes_available.update({c: {"ztfids": []}})
             for entry in self.headers.values():
-                print(entry.get("simple_class"))
+                if entry.get("simple_class") == c:
+                    classes_available.get(c).get("ztfids").append(entry.get("name"))
+            classes_available[c]["entries"] = len(
+                classes_available.get(c).get("ztfids")
+            )
+
+        for c in self.weights:
+            if c not in classes_available.keys():
+                raise ValueError(
+                    f"Your weight names have to be in {list(classes_available.keys())}"
+                )
+
+        if relative_weighting is False:
+            for c, target_n in self.weights.items():
+                print(c)
+                print(target_n)
+                available = classes_available.get(c).get("entries")
+                print(available)
+                print("-----")
 
     def noisify(self, train_dir: str = None):
         """
