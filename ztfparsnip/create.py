@@ -181,7 +181,7 @@ class CreateLightcurves(object):
 
         tdes = self.classes_available.get("tde").get("ztfids")
 
-        for lc, header in self.get_lightcurves(end=10):
+        for lc, header in self.get_lightcurves(end=2):
             if lc is not None:
                 if (c := header.get("simple_class")) is not None:
                     if c in self.selection.keys():
@@ -239,20 +239,8 @@ class CreateLightcurves(object):
 
         elif self.output_format == "csv":
             for lc in lc_list:
-                parent_ztfid = lc.meta.get("name")
-                parent_z = lc.meta.get("bts_z")
-                z = lc.meta.get("z")
-                if z == parent_z:
-                    filename = f"{parent_ztfid}.csv"
-                else:
-                    filename = f"{parent_ztfid}_{self.short_id()}.csv"
-                df = lc.to_pandas(index="jd")
-                df.to_csv(os.path.join(train_dir, filename))
+                io.save_csv_with_header(lc, savedir=train_dir)
 
         self.logger.info(
             f"Saved to {self.output_format} files in {os.path.abspath(train_dir)}"
         )
-
-    @staticmethod
-    def short_id():
-        return "".join(random.choices(alphabet, k=5))

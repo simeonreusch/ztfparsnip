@@ -2,7 +2,7 @@
 # Author: Simeon Reusch (simeon.reusch@desy.de)
 # License: BSD-3-Clause
 
-import os, re, logging, yaml
+import os, re, logging, yaml, random, string
 
 from typing import List
 
@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 
 logger = logging.getLogger(__name__)
+alphabet = string.ascii_lowercase + string.digits
 
 if os.getenv("ZTFDATA"):
     BTS_LC_BASELINE_DIR = os.path.join(
@@ -141,10 +142,45 @@ def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
         raise ValueError(f"{ztfid} is not a valid ZTF ID")
 
 
-def generate_headerstring(headerdict) -> str:
+def save_csv_with_header(lc, savedir: str) -> str:
     """
-    Generate a string of the header from a dict, meant to be written to a csv file
+    Generate a string of the header from a dict, meant to be written to a csv file. Save the lightcurve with the header info as csv
     """
+    header = lc.meta
+
+    parent_ztfid = lc.meta.get("name")
+    parent_z = header.get("bts_z")
+    z = header.get("z")
+
+    if z == parent_z:
+        name = parent_ztfid
+        filename = f"{parent_ztfid}.csv"
+    else:
+        name = f"{parent_ztfid}_{short_id()}"
+        filename = f"{name}.csv"
+
+    header["parent_ztfid"] = parent_ztfid
+    header["name"] = name
+
+    headerstr = ""
+    for i, val in header.items():
+        headerstr += f"#{i}={val}\n"
+
+    outfile = os.path.join(savedir, filename)
+
+    df = lc.to_pandas(index="jd")
+
+    if os.path.isfile(outfile):
+        os.remove(outfile)
+
+    with open(outfile, "w") as f:
+        f.write(headerstr)
+        df.to_csv(f)
+        f.close()
+
+
+def short_id():
+    return "".join(random.choices(alphabet, k=5))
 
 
 def get_all_ztfids(lc_dir: str | None = None) -> List[str]:
