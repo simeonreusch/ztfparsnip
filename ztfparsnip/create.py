@@ -19,7 +19,7 @@ class CreateLightcurves(object):
 
     def __init__(
         self,
-        weights: dict[Any] = {},
+        weights: None | dict[Any] = None,
         bts_baseline_dir: str | None = None,
         name: str = "train",
         reprocess_headers: bool = False,
@@ -39,6 +39,15 @@ class CreateLightcurves(object):
         self.config = io.load_config()
 
         self.get_headers(reprocess=reprocess_headers)
+
+        # initialize default weights
+        if self.weights is None:
+            self.weights = {
+                "sn_ia": 12520,
+                "tde": 12520,
+                # "baratheon": 12520,
+                "sn_other": 12520,
+            }
 
     def get_simple_class(self, bts_class: str) -> str:
         """
@@ -92,16 +101,14 @@ class CreateLightcurves(object):
             if (z := v.get("bts_z")) != "-" and z is not None:
                 self.headers.update({k: v})
 
-    def select(self, seed=None):
+    def select(
+        self,
+    ):
         """
         Select initial lightcurves based on weights and classifications
         """
         classes_available = {}
-
-        if len(self.weights) == 0:
-            raise ValueError(
-                "You have to define weights. Pass the weights dictionary to the CreateLightcurves class"
-            )
+        self.selection = {}
 
         # Check if we do relative amounts of lightcurves or absolute
         weight_values = list(self.weights.values())
@@ -130,13 +137,17 @@ class CreateLightcurves(object):
                     f"Your weight names have to be in {list(classes_available.keys())}"
                 )
 
+        if relative_weighting is True:
+            print("relative")
+
         if relative_weighting is False:
             for c, target_n in self.weights.items():
-                print(c)
-                print(target_n)
                 available = classes_available.get(c).get("entries")
-                print(available)
-                print("-----")
+                multiplier = int(target_n / available)
+
+                self.selection.update({c: multiplier})
+
+        self.logger.info(f"Your selected weights: {self.selection}")
 
     def noisify(self, train_dir: str = None):
         """
@@ -148,13 +159,17 @@ class CreateLightcurves(object):
         noisy_lc_list = []
         for lc, header in self.get_lightcurves(1):
             if lc is not None:
-                if header.get("bts_class") is not None:
-                    bts_lc, noisy_lc = noisify.noisify_lightcurve(lc, header)
-                    if bts_lc is not None:
-                        bts_lc_list.append(bts_lc)
-                        noisy_lc_list.extend(noisy_lc)
-                    else:
-                        failed["no_lc_after_cuts"].append(header.get("name"))
+                if (c := header.get("simple_class")) is not None:
+                    if c in self.selection.keys():
+                        multiplier = self.selection[c]
+                        bts_lc, noisy_lc = noisify.noisify_lightcurve(
+                            lc, header, multiplier
+                        )
+                        if bts_lc is not None:
+                            bts_lc_list.append(bts_lc)
+                            noisy_lc_list.extend(noisy_lc)
+                        else:
+                            failed["no_lc_after_cuts"].append(header.get("name"))
                 else:
                     failed["no_class"].append(header.get("name"))
             else:

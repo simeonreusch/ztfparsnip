@@ -17,7 +17,7 @@ from copy import copy
 from ztfparsnip import io
 
 delta_z: float = 0.1
-n_sim: float = 10
+# n_sim: float = 10
 
 SN_threshold: float = 5.0
 n_det_threshold: float = 5.0
@@ -102,7 +102,7 @@ def get_astropy_table(df, header, remove_poor_conditions=True, phase_lim=True):
     return phot_tab
 
 
-def get_noisified_data(lc_table, delta_z, n_sim):
+def get_noisified_data(lc_table, delta_z, multiplier):
 
     this_lc = copy(lc_table)
     this_lc = this_lc[this_lc["flux"] > 0.0]
@@ -117,7 +117,7 @@ def get_noisified_data(lc_table, delta_z, n_sim):
     max_z = truez + delta_z
     z_list = np.random.power(4, 10000) * max_z
     z_list = z_list[z_list > truez]
-    z_selected = random.choices(z_list, k=n_sim)
+    z_selected = random.choices(z_list, k=multiplier)
     noisy_lc_list = []
     z_list_update = []
 
@@ -225,7 +225,7 @@ def flux_to_mag(flux, zp):
     return mag
 
 
-def noisify_lightcurve(table, header):
+def noisify_lightcurve(table, header, multiplier):
     """
     Noisify a lightcurve generated in create.py
     """
@@ -237,7 +237,7 @@ def noisify_lightcurve(table, header):
         return None, None
 
     # -------- Noisification -------- #
-    new_table_list, sim_z_list = get_noisified_data(table, delta_z, n_sim)
+    new_table_list, sim_z_list = get_noisified_data(table, delta_z, multiplier)
     delta_m_list, delta_f_list = get_k_correction(table, sim_z_list)
 
     # Add k correction
