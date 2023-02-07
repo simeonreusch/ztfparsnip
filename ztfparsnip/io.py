@@ -74,7 +74,7 @@ def get_lightcurve(
     header = get_ztfid_header(ztfid=ztfid, lc_dir=lc_dir)
 
     if enforce_z and header.get("bts_z") == "-":
-        logger.warn(f"{ztfid}: no redshift")
+        # logger.warn(f"{ztfid}: no redshift")
         return None, header
 
     return lc, header

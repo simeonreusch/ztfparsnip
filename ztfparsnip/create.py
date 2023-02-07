@@ -70,7 +70,7 @@ class CreateLightcurves(object):
 
         bts_lc_list = []
         noisy_lc_list = []
-        for lc, header in self.get_lightcurves(end=100):
+        for lc, header in self.get_lightcurves(10):
             if lc is not None:
                 if header.get("bts_class") is not None:
                     bts_lc, noisy_lc = noisify.noisify_lightcurve(lc, header)
