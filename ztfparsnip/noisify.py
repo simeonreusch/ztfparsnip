@@ -240,6 +240,7 @@ def noisify_lightcurve(table, header, multiplier):
     res = []
     res_counter = 0
     n_iter = 0
+
     while len(noisy_lcs) < (multiplier - 1):
         new_table_list, sim_z_list = get_noisified_data(table, delta_z)
         delta_m_list, delta_f_list = get_k_correction(table, sim_z_list)

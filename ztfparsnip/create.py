@@ -23,12 +23,14 @@ class CreateLightcurves(object):
         bts_baseline_dir: str | None = None,
         name: str = "train",
         reprocess_headers: bool = False,
+        output_format: str = "h5",
     ):
         super(CreateLightcurves, self).__init__()
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Creating lightcurves")
         self.weights = weights
         self.name = name
+        self.output_format = output_format
 
         if bts_baseline_dir is None:
             self.lc_dir = io.BTS_LC_BASELINE_DIR
@@ -177,7 +179,7 @@ class CreateLightcurves(object):
 
         tdes = self.classes_available.get("tde").get("ztfids")
 
-        for lc, header in self.get_lightcurves():
+        for lc, header in self.get_lightcurves(end=1):
             if lc is not None:
                 if (c := header.get("simple_class")) is not None:
                     if c in self.selection.keys():
@@ -198,8 +200,6 @@ class CreateLightcurves(object):
             else:
                 failed["no_z"].append(header.get("name"))
 
-        print(generated)
-
         lc_list = [*bts_lc_list, *noisy_lc_list]
 
         if train_dir is None:
@@ -216,17 +216,29 @@ class CreateLightcurves(object):
             f"Generated {len(noisy_lc_list)+len(bts_lc_list)} lightcurves from {len(bts_lc_list)} original lightcurves"
         )
 
-        # Save h5 files
-        dataset_h5_bts = lcdata.from_light_curves(bts_lc_list)
-        dataset_h5_noisy = lcdata.from_light_curves(noisy_lc_list)
-        dataset_h5_combined = lcdata.from_light_curves(lc_list)
+        self.logger.info(f"Created per class: {generated}")
 
-        dataset_h5_bts.write_hdf5(
-            os.path.join(train_dir, f"{self.name}_bts.h5"), overwrite=True
-        )
-        dataset_h5_noisy.write_hdf5(
-            os.path.join(train_dir, f"{self.name}_noisy.h5"), overwrite=True
-        )
-        dataset_h5_combined.write_hdf5(
-            os.path.join(train_dir, f"{self.name}_combined.h5"), overwrite=True
+        if self.output_format == "h5":
+
+            # Save h5 files
+            dataset_h5_bts = lcdata.from_light_curves(bts_lc_list)
+            dataset_h5_noisy = lcdata.from_light_curves(noisy_lc_list)
+            dataset_h5_combined = lcdata.from_light_curves(lc_list)
+
+            dataset_h5_bts.write_hdf5(
+                os.path.join(train_dir, f"{self.name}_bts.h5"), overwrite=True
+            )
+            dataset_h5_noisy.write_hdf5(
+                os.path.join(train_dir, f"{self.name}_noisy.h5"), overwrite=True
+            )
+            dataset_h5_combined.write_hdf5(
+                os.path.join(train_dir, f"{self.name}_combined.h5"), overwrite=True
+            )
+
+        # elif self.output_format == "csv":
+        #     print(noisy_lc_list[0])
+        #     quit()
+
+        self.logger.info(
+            f"Saved to {self.output_format} files in {os.path.abspath(train_dir)}"
         )
