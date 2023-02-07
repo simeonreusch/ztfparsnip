@@ -2,7 +2,7 @@
 # Author: Lightcurve creation code by Alice Townsend (alice.townsend@hu-berlin.de)
 # License: BSD-3-Clause
 
-import os, numpy, logging, json, string, random
+import os, numpy, logging, json
 
 from typing import Any
 
@@ -11,8 +11,6 @@ from tqdm import tqdm
 from ztfparsnip import io
 from ztfparsnip import noisify
 import lcdata
-
-alphabet = string.ascii_lowercase + string.digits
 
 
 class CreateLightcurves(object):
@@ -181,7 +179,7 @@ class CreateLightcurves(object):
 
         tdes = self.classes_available.get("tde").get("ztfids")
 
-        for lc, header in self.get_lightcurves(end=2):
+        for lc, header in self.get_lightcurves(end=20):
             if lc is not None:
                 if (c := header.get("simple_class")) is not None:
                     if c in self.selection.keys():
