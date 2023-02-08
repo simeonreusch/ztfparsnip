@@ -170,7 +170,9 @@ class CreateLightcurves(object):
 
         self.classes_available = classes_available
 
-    def noisify(self, train_dir: str = None, plot_debug: bool = False):
+    def noisify(
+        self, train_dir: str = None, plot_debug: bool = False, n: int | None = None
+    ):
         """
         Noisify the sample
         """
@@ -182,25 +184,30 @@ class CreateLightcurves(object):
 
         tdes = self.classes_available.get("tde").get("ztfids")
 
-        for lc, header in self.get_lightcurves(end=20):
+        for lc, header in self.get_lightcurves(end=n):
             if lc is not None:
                 if (c := header.get("simple_class")) is not None:
                     if c in self.selection.keys():
                         multiplier = self.selection[c]
-                        bts_lc, noisy_lc = noisify.noisify_lightcurve(
+                        bts_lc, noisy_lcs = noisify.noisify_lightcurve(
                             lc, header, multiplier
                         )
                         if bts_lc is not None:
                             bts_lc_list.append(bts_lc)
-                            noisy_lc_list.extend(noisy_lc)
+                            noisy_lc_list.extend(noisy_lcs)
                             total = len(noisy_lc_list) + len(bts_lc_list)
-                            this_round = 1 + len(noisy_lc)
+                            this_round = 1 + len(noisy_lcs)
                             generated.update({c: generated[c] + this_round})
                             if plot_debug:
-                                for i in range(len(noisy_lc)):
-                                    noisy_table = noisy_lc[i]
+                                for noisy_table in noisy_lcs:
                                     ax = plot.plot_lc(bts_lc, noisy_table)
-                                    plt.savefig(os.path.join(train_dir, f"{bts_lc.meta['name']}_{i}.pdf"), format="pdf", bbox_inches="tight")
+                                    plt.savefig(
+                                        os.path.join(
+                                            train_dir, f"{bts_lc.meta['name']}_{i}.pdf"
+                                        ),
+                                        format="pdf",
+                                        bbox_inches="tight",
+                                    )
 
                         else:
                             failed["no_lc_after_cuts"].append(header.get("name"))
