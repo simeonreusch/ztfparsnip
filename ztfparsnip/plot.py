@@ -8,15 +8,26 @@ import matplotlib.pyplot as plt
 
 
 def plot_lc(
-    bts_table, noisy_table, sig_noise_mask: bool = True, fig_size: tuple = (8, 5)
+    bts_table,
+    noisy_table,
+    sig_noise_mask: bool = True,
+    fig_size: tuple = (8, 5),
+    plot_iband=False,
 ):
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=fig_size)
     peakjd = float(bts_table.meta["bts_peak_jd"])
+
+    if not plot_iband:
+        bts_table = bts_table[bts_table["band"] != "ztfi"]
+        noisy_table = noisy_table[noisy_table["band"] != "ztfi"]
 
     if sig_noise_mask:
         s_n = np.abs(np.array(noisy_table["flux"] / noisy_table["fluxerr"]))
         mask = s_n > 3.0
         noisy_table = noisy_table[mask]
+
+    if len(noisy_table) == 0:
+        return None
 
     col = []
     col_noisy = []
