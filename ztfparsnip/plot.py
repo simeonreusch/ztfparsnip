@@ -58,7 +58,7 @@ def plot_lc(
         yerr=bts_table["sigmapsf"],
         ecolor=col,
         ls="none",
-        elinewidth=1.7,
+        elinewidth=1.2,
     )
     ax.scatter(bts_table["jd"] - peakjd, bts_table["magpsf"], c=col, marker="o", s=20)
 
@@ -68,7 +68,7 @@ def plot_lc(
         yerr=noisy_table["sigmapsf"],
         ecolor=col_noisy,
         ls="none",
-        elinewidth=1.7,
+        elinewidth=1.2,
     )
     ax.scatter(
         noisy_table["jd"] - peakjd, noisy_table["magpsf"], c=col_noisy, marker="o", s=20
@@ -89,13 +89,14 @@ def plot_lc(
         s=20,
         label=r"g band at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
     )
-    ax.scatter(
-        1000,
-        0,
-        c="darkorange",
-        s=20,
-        label=r"i band lc at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
-    )
+    if plot_iband:
+        ax.scatter(
+            1000,
+            0,
+            c="darkorange",
+            s=20,
+            label=r"i band lc at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
+        )
     ax.scatter(
         1000,
         0,
@@ -110,15 +111,16 @@ def plot_lc(
         s=20,
         label=r"g band at $z = %.2f$" % (float(noisy_table.meta["z"])),
     )
-    ax.scatter(
-        1000,
-        0,
-        c="goldenrod",
-        s=20,
-        label=r"i band lc at $z = %.2f$" % (float(noisy_table.meta["z"])),
-    )
+    if plot_iband:
+        ax.scatter(
+            1000,
+            0,
+            c="goldenrod",
+            s=20,
+            label=r"i band lc at $z = %.2f$" % (float(noisy_table.meta["z"])),
+        )
 
-    ax.set_ylabel("Magnitude")
+    ax.set_ylabel("Magnitude (AB)")
     ax.set_xlabel("Time after peak (days)")
     ax.set_ylim(np.nanmax(noisy_table["magpsf"]) + 0.3, min(bts_table["magpsf"]) - 0.3)
     ax.set_xlim(-10, 35)
