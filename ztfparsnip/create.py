@@ -10,7 +10,10 @@ from tqdm import tqdm
 
 from ztfparsnip import io
 from ztfparsnip import noisify
+from ztfparsnip import plot
 import lcdata
+
+import matplotlib.pyplot as plt
 
 
 class CreateLightcurves(object):
@@ -167,7 +170,7 @@ class CreateLightcurves(object):
 
         self.classes_available = classes_available
 
-    def noisify(self, train_dir: str = None):
+    def noisify(self, train_dir: str = None, plot_debug: bool = False):
         """
         Noisify the sample
         """
@@ -193,6 +196,12 @@ class CreateLightcurves(object):
                             total = len(noisy_lc_list) + len(bts_lc_list)
                             this_round = 1 + len(noisy_lc)
                             generated.update({c: generated[c] + this_round})
+                            if plot_debug:
+                                for i in range(len(noisy_lc)):
+                                    noisy_table = noisy_lc[i]
+                                    ax = plot.plot_lc(bts_lc, noisy_table)
+                                    plt.savefig(os.path.join(train_dir, f"{bts_lc.meta['name']}_{i}.pdf"), format="pdf", bbox_inches="tight")
+
                         else:
                             failed["no_lc_after_cuts"].append(header.get("name"))
                 else:
