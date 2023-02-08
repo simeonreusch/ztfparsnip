@@ -109,7 +109,8 @@ def plot_lc(
 
     ax.set_ylabel("Magnitude")
     ax.set_xlabel("Time after peak (days)")
-    ax.set_ylim(max(noisy_table["magpsf"]), min(bts_table["magpsf"]))
+    ax.set_ylim(np.nanmax(noisy_table["magpsf"]) + 0.3, min(bts_table["magpsf"]) - 0.3)
     ax.set_xlim(-10, 35)
     ax.legend()
+
     return ax
