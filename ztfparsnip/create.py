@@ -199,7 +199,7 @@ class CreateLightcurves(object):
                             this_round = 1 + len(noisy_lcs)
                             generated.update({c: generated[c] + this_round})
                             if plot_debug:
-                                for noisy_table in noisy_lcs:
+                                for i, noisy_table in enumerate(noisy_lcs):
                                     ax = plot.plot_lc(bts_lc, noisy_table)
                                     plt.savefig(
                                         os.path.join(
