@@ -8,7 +8,9 @@ from ztfparsnip.train import Train
 
 def run():
     logging.basicConfig(level=logging.INFO)
-    _parser = argparse.ArgumentParser(description="Create my bills")
+    _parser = argparse.ArgumentParser(
+        description="Train Parsnip on noisified lightcurves"
+    )
 
     _parser.add_argument(
         "file",

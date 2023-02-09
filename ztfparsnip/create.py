@@ -32,6 +32,7 @@ class CreateLightcurves(object):
         name: str = "train",
         reprocess_headers: bool = False,
         output_format: str = "h5",
+        plot_magdist: bool = True,
         train_dir: Path = io.TRAIN_DATA,
     ):
         super(CreateLightcurves, self).__init__()
@@ -42,6 +43,7 @@ class CreateLightcurves(object):
         self.validation_seed = validation_seed
         self.name = name
         self.output_format = output_format
+        self.plot_magdist = plot_magdist
         self.train_dir = train_dir
 
         self.rng = default_rng(seed=validation_seed)
@@ -294,6 +296,7 @@ class CreateLightcurves(object):
             dataset_h5_bts = lcdata.from_light_curves(bts_lc_list)
             dataset_h5_noisy = lcdata.from_light_curves(noisy_lc_list)
             dataset_h5_combined = lcdata.from_light_curves(lc_list)
+            dataset_h5_validation = lcdata.from_light_curves(validation_lc_list)
 
             dataset_h5_bts.write_hdf5(
                 str(self.train_dir / f"{self.name}_bts.h5"), overwrite=True
@@ -304,6 +307,9 @@ class CreateLightcurves(object):
             dataset_h5_combined.write_hdf5(
                 str(self.train_dir / f"{self.name}_combined.h5"), overwrite=True
             )
+            dataset_h5_validation.write_hdf5(
+                str(self.train_dir / f"{self.name}_combined.h5"), overwrite=True
+            )
 
         elif self.output_format == "csv":
             for lc in lc_list:
@@ -312,7 +318,6 @@ class CreateLightcurves(object):
         self.logger.info(
             f"Saved to {self.output_format} files in {self.train_dir.resolve()}"
         )
-
 
     def create_magdist_plot(self, n: int | None = None):
         """
@@ -336,10 +341,14 @@ class CreateLightcurves(object):
                             lc, header, multiplier
                         )
                         if bts_lc is not None:
-                            bts_mag_list.append(bts_lc['magpsf'].data)
-                            bts_magerr_list.append(bts_lc['sigmapsf'].data)
-                            noisy_mag_list.extend(noisy_lcs['magpsf'].data)
-                            noisy_magerr_list.extend(noisy_lcs['sigmapsf'].data)
+                            bts_mag_list.append(bts_lc["magpsf"].data)
+                            bts_magerr_list.append(bts_lc["sigmapsf"].data)
+                            noisy_mag_list.extend(
+                                [noisy_lc["magpsf"].data for noisy_lc in noisy_lcs]
+                            )
+                            noisy_magerr_list.extend(
+                                [noisy_lc["sigmapsf"].data for noisy_lc in noisy_lcs]
+                            )
                             this_round = 1 + len(noisy_lcs)
                             generated.update({c: generated[c] + this_round})
 
@@ -356,5 +365,9 @@ class CreateLightcurves(object):
 
         self.logger.info(f"Created per class: {generated}")
 
-        plot_dist = plot.plot_magnitude_dist(bts_mag_list, bts_magerr_list, noisy_mag_list, noisy_magerr_list)
-        plt.savefig(self.train_dir / "mag_vs_magerr.pdf", format="pdf", bbox_inches="tight")
+        plot_dist = plot.plot_magnitude_dist(
+            bts_mag_list, bts_magerr_list, noisy_mag_list, noisy_magerr_list
+        )
+        plt.savefig(
+            self.train_dir / "mag_vs_magerr.pdf", format="pdf", bbox_inches="tight"
+        )
