@@ -2,11 +2,12 @@
 # Author: Lightcurve creation code by Alice Townsend (alice.townsend@hu-berlin.de)
 # License: BSD-3-Clause
 
-import os, numpy, logging, json
+import os, numpy, logging, json, math
 
 from pathlib import Path
 
 from typing import Any
+from numpy.random import default_rng
 
 from tqdm import tqdm
 
@@ -25,7 +26,7 @@ class CreateLightcurves(object):
     def __init__(
         self,
         weights: None | dict[Any] = None,
-        validation_fraction: float = 0.9,
+        validation_fraction: float = 0.1,
         validation_seed: int | None = None,
         bts_baseline_dir: str | None = None,
         name: str = "train",
@@ -42,6 +43,8 @@ class CreateLightcurves(object):
         self.name = name
         self.output_format = output_format
         self.train_dir = train_dir
+
+        self.rng = default_rng(seed=validation_seed)
 
         if isinstance(self.train_dir, str):
             self.train_dir = Path(self.train_dir)
@@ -141,6 +144,7 @@ class CreateLightcurves(object):
         """
         classes_available = {}
         self.selection = {}
+        self.validation_sample = {"all": {"ztfids": [], "entries": 0}}
 
         # Check if we do relative amounts of lightcurves or absolute
         weight_values = list(self.weights.values())
@@ -179,7 +183,25 @@ class CreateLightcurves(object):
         self.logger.info(
             f"\n---------------------------------\nLightcurves available:\n{availability}---------------------------------"
         )
-        quit()
+        for k, v in classes_available.items():
+            validation_number = math.ceil(
+                self.validation_fraction * classes_available[k]["entries"]
+            )
+            validation_ztfids = self.rng.choice(
+                classes_available[k].get("ztfids"), size=validation_number
+            )
+            all_validation_ztfids = self.validation_sample["all"]["ztfids"]
+            all_validation_ztfids.extend(validation_ztfids)
+            self.validation_sample.update(
+                {
+                    k: {"ztfids": validation_ztfids, "entries": len(validation_ztfids)},
+                    "all": {
+                        "entries": self.validation_sample["all"]["entries"]
+                        + len(validation_ztfids),
+                        "ztfids": all_validation_ztfids,
+                    },
+                }
+            )
 
         if relative_weighting is False:
             for c, target_n in self.weights.items():
@@ -207,6 +229,7 @@ class CreateLightcurves(object):
         """
         failed = {"no_z": [], "no_class": [], "no_lc_after_cuts": []}
 
+        validation_lc_list = []
         bts_lc_list = []
         noisy_lc_list = []
         generated = {k: 0 for (k, v) in self.selection.items()}
@@ -215,28 +238,38 @@ class CreateLightcurves(object):
             if lc is not None:
                 if (c := header.get("simple_class")) is not None:
                     if c in self.selection.keys():
-                        multiplier = self.selection[c]
-                        bts_lc, noisy_lcs = noisify.noisify_lightcurve(
-                            lc, header, multiplier
-                        )
-                        if bts_lc is not None:
-                            bts_lc_list.append(bts_lc)
-                            noisy_lc_list.extend(noisy_lcs)
-                            total = len(noisy_lc_list) + len(bts_lc_list)
-                            this_round = 1 + len(noisy_lcs)
-                            generated.update({c: generated[c] + this_round})
-                            if plot_debug:
-                                for i, noisy_table in enumerate(noisy_lcs):
-                                    ax = plot.plot_lc(bts_lc, noisy_table)
-                                    plt.savefig(
-                                        self.train_dir
-                                        / f"{bts_lc.meta['name']}_{i}.pdf",
-                                        format="pdf",
-                                        bbox_inches="tight",
-                                    )
+
+                        # check if it's a validation sample lightcurve
+                        if header["name"] in self.validation_sample["all"]["ztfids"]:
+                            validation_lc, _ = noisify.noisify_lightcurve(
+                                table=lc, header=header, multiplier=0
+                            )
+                            if validation_lc is not None:
+                                validation_lc_list.append(validation_lc)
 
                         else:
-                            failed["no_lc_after_cuts"].append(header.get("name"))
+                            bts_lc, noisy_lcs = noisify.noisify_lightcurve(
+                                table=lc, header=header, multiplier=self.selection[c]
+                            )
+                            if bts_lc is not None:
+                                bts_lc_list.append(bts_lc)
+                                noisy_lc_list.extend(noisy_lcs)
+                                total = len(noisy_lc_list) + len(bts_lc_list)
+                                this_round = 1 + len(noisy_lcs)
+                                generated.update({c: generated[c] + this_round})
+                                if plot_debug:
+                                    for i, noisy_table in enumerate(noisy_lcs):
+                                        ax = plot.plot_lc(bts_lc, noisy_table)
+                                        plt.savefig(
+                                            self.train_dir
+                                            / f"{bts_lc.meta['name']}_{i}.pdf",
+                                            format="pdf",
+                                            bbox_inches="tight",
+                                        )
+                                        plt.close()
+
+                            else:
+                                failed["no_lc_after_cuts"].append(header.get("name"))
                 else:
                     failed["no_class"].append(header.get("name"))
             else:
@@ -251,6 +284,7 @@ class CreateLightcurves(object):
         self.logger.info(
             f"Generated {len(noisy_lc_list)+len(bts_lc_list)} lightcurves from {len(bts_lc_list)} original lightcurves"
         )
+        self.logger.info(f"Kept {len(validation_lc_list)} lightcurves for validation")
 
         self.logger.info(f"Created per class: {generated}")
 
