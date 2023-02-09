@@ -4,6 +4,8 @@
 
 import os, re, logging, yaml, random, string
 
+from pathlib import Path
+
 from typing import List
 
 import pandas as pd
@@ -12,19 +14,15 @@ import numpy as np
 logger = logging.getLogger(__name__)
 alphabet = string.ascii_lowercase + string.digits
 
-if os.getenv("ZTFDATA"):
-    BTS_LC_BASELINE_DIR = os.path.join(
-        str(os.getenv("ZTFDATA")), "nuclear_sample", "BTS", "baseline"
-    )
-    TRAIN_DATA = os.path.join(
-        str(os.getenv("ZTFDATA")), "nuclear_sample", "BTS", "train"
-    )
+if ztfdir := os.getenv("ZTFDATA"):
+    BTS_LC_BASELINE_DIR = Path(ztfdir) / "nuclear_sample" / "BTS" / "baseline"
+    TRAIN_DATA = Path(ztfdir) / "nuclear_sample" / "BTS" / "train"
+
     for d in [BTS_LC_BASELINE_DIR, TRAIN_DATA]:
         if not os.path.exists(d):
             os.makedirs(d)
 
-    BTS_HEADERS = os.path.join(BTS_LC_BASELINE_DIR, "headers.json")
-
+    BTS_HEADERS = BTS_LC_BASELINE_DIR / "headers.json"
 else:
     raise ValueError(
         "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See github.com/mickaelrigault/ztfquery"
@@ -83,14 +81,14 @@ def get_lightcurve(
     return lc, header
 
 
-def get_ztfid_dataframe(ztfid: str, lc_dir: str | None = None) -> pd.DataFrame | None:
+def get_ztfid_dataframe(ztfid: str, lc_dir: Path | None = None) -> pd.DataFrame | None:
     """
     Get the Pandas Dataframe of a single transient
     """
     if is_valid_ztfid(ztfid):
         if lc_dir is None:
             lc_dir = BTS_LC_BASELINE_DIR
-        filepath = os.path.join(lc_dir, f"{ztfid}_bl.csv")
+        filepath = lc_dir / f"{ztfid}_bl.csv"
 
         try:
             df = pd.read_csv(filepath, comment="#", index_col=0)
@@ -111,8 +109,7 @@ def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
     if is_valid_ztfid(ztfid):
         if lc_dir is None:
             lc_dir = BTS_LC_BASELINE_DIR
-
-        filepath = os.path.join(lc_dir, f"{ztfid}_bl.csv")
+        filepath = lc_dir / f"{ztfid}_bl.csv"
 
         try:
             with open(filepath, "r") as input_file:
@@ -142,7 +139,7 @@ def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
         raise ValueError(f"{ztfid} is not a valid ZTF ID")
 
 
-def save_csv_with_header(lc, savedir: str) -> str:
+def save_csv_with_header(lc, savedir: Path) -> str:
     """
     Generate a string of the header from a dict, meant to be written to a csv file. Save the lightcurve with the header info as csv
     """
@@ -166,7 +163,7 @@ def save_csv_with_header(lc, savedir: str) -> str:
     for i, val in header.items():
         headerstr += f"#{i}={val}\n"
 
-    outfile = os.path.join(savedir, filename)
+    outfile = savedir / filename
 
     df = lc.to_pandas(index="jd")
 
@@ -201,13 +198,13 @@ def get_all_ztfids(lc_dir: str | None = None) -> List[str]:
     return ztfids
 
 
-def load_config(config_path: str | None = None) -> dict:
+def load_config(config_path: Path | None = None) -> dict:
     """
     Loads the user-specific config
     """
     if not config_path:
-        current_dir = os.path.dirname(__file__)
-        config_path = os.path.join(current_dir, "..", "config.yaml")
+        current_dir = Path(__file__).parent
+        config_path = current_dir.parent / "config.yaml"
 
     with open(config_path) as f:
         config = yaml.safe_load(f)

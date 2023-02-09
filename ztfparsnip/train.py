@@ -3,6 +3,8 @@
 import logging, os, subprocess, time, warnings
 from typing import Tuple
 
+from pathlib import Path
+
 import lcdata  # type: ignore
 import pandas as pd  # type: ignore
 import numpy as np
@@ -11,7 +13,9 @@ import parsnip  # type: ignore
 
 
 class Train:
-    def __init__(self, path: str, seed=None):
+    def __init__(self, path: Path | str, seed=None):
+        if isinstance(path, str):
+            path = Path(path)
         self.training_path = path
         self.logger = logging.getLogger(__name__)
         self.rng = default_rng(seed=seed)
@@ -58,12 +62,11 @@ class Train:
     def run(self, threads: int = 10, outfile: str | None = None):
         """Run the actual train command"""
         if outfile is None:
-            model_dir = os.path.abspath("models")
-            if not os.path.exists(model_dir):
+            model_dir = Path("models").resolve()
+            if not model_dir.exists():
                 os.makedirs(model_dir)
-            outfile = os.path.join(
-                model_dir,
-                os.path.basename(self.training_path).split(".")[0] + "_model.hd5",
+            outfile = model_dir / self.training_path.with_name(
+                self.training_path.stem + "_model.hd5"
             )
 
         self.logger.info(f"Running training. Outfile will be {outfile}")
@@ -109,7 +112,7 @@ class Train:
         args["max_epochs"] = 1000
 
         dataset = parsnip.load_datasets(
-            [self.training_path],
+            [str(self.training_path.resolve())],
             require_redshift=True,
         )
         bands = parsnip.get_bands(dataset)

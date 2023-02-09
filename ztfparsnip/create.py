@@ -4,6 +4,8 @@
 
 import os, numpy, logging, json
 
+from pathlib import Path
+
 from typing import Any
 
 from tqdm import tqdm
@@ -23,17 +25,29 @@ class CreateLightcurves(object):
     def __init__(
         self,
         weights: None | dict[Any] = None,
+        validation_fraction: float = 0.9,
+        validation_seed: int | None = None,
         bts_baseline_dir: str | None = None,
         name: str = "train",
         reprocess_headers: bool = False,
         output_format: str = "h5",
+        train_dir: Path = io.TRAIN_DATA,
     ):
         super(CreateLightcurves, self).__init__()
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Creating lightcurves")
         self.weights = weights
+        self.validation_fraction = validation_fraction
+        self.validation_seed = validation_seed
         self.name = name
         self.output_format = output_format
+        self.train_dir = train_dir
+
+        if isinstance(self.train_dir, str):
+            self.train_dir = Path(self.train_dir)
+
+        if not self.train_dir.exists():
+            os.makedirs(self.train_dir)
 
         if bts_baseline_dir is None:
             self.lc_dir = io.BTS_LC_BASELINE_DIR
@@ -50,9 +64,13 @@ class CreateLightcurves(object):
             self.weights = {
                 "sn_ia": 12520,
                 "tde": 12520,
-                # "baratheon": 12520,
                 "sn_other": 12520,
             }
+
+        self.logger.info("Creating noisified training data.")
+        self.logger.info(
+            f"Selected configuration\nweights: {self.weights}\nvalidation fraction: {self.validation_fraction}\nvalidation seed: {self.validation_seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}"
+        )
 
     def get_simple_class(self, bts_class: str) -> str:
         """
@@ -93,7 +111,7 @@ class CreateLightcurves(object):
         headers_raw = {}
         self.headers = {}
 
-        if not os.path.isfile(io.BTS_HEADERS) or reprocess:
+        if not io.BTS_HEADERS.is_file() or reprocess:
 
             for ztfid in tqdm(self.ztfids, total=len(self.ztfids)):
                 _, header = io.get_lightcurve(ztfid=ztfid, lc_dir=self.lc_dir)
@@ -126,6 +144,7 @@ class CreateLightcurves(object):
             for val in weight_values:
                 assert isinstance(val, float)
             relative_weighting = True
+            raise ValueError("Not implemented yet. Please pass integers.")
         else:
             for val in weight_values:
                 assert isinstance(val, int)
@@ -170,9 +189,7 @@ class CreateLightcurves(object):
 
         self.classes_available = classes_available
 
-    def noisify(
-        self, train_dir: str = None, plot_debug: bool = False, n: int | None = None
-    ):
+    def noisify(self, plot_debug: bool = False, n: int | None = None):
         """
         Noisify the sample
         """
@@ -181,8 +198,6 @@ class CreateLightcurves(object):
         bts_lc_list = []
         noisy_lc_list = []
         generated = {k: 0 for (k, v) in self.selection.items()}
-
-        tdes = self.classes_available.get("tde").get("ztfids")
 
         for lc, header in self.get_lightcurves(end=n):
             if lc is not None:
@@ -202,9 +217,8 @@ class CreateLightcurves(object):
                                 for i, noisy_table in enumerate(noisy_lcs):
                                     ax = plot.plot_lc(bts_lc, noisy_table)
                                     plt.savefig(
-                                        os.path.join(
-                                            train_dir, f"{bts_lc.meta['name']}_{i}.pdf"
-                                        ),
+                                        self.train_dir
+                                        / f"{bts_lc.meta['name']}_{i}.pdf",
                                         format="pdf",
                                         bbox_inches="tight",
                                     )
@@ -217,12 +231,6 @@ class CreateLightcurves(object):
                 failed["no_z"].append(header.get("name"))
 
         lc_list = [*bts_lc_list, *noisy_lc_list]
-
-        if train_dir is None:
-            train_dir = io.TRAIN_DATA
-        else:
-            if not os.path.exists(train_dir):
-                os.makedirs(train_dir)
 
         self.logger.info(
             f"{len(failed['no_z'])} items: no redshift | {len(failed['no_lc_after_cuts'])} items: lc does not survive cuts | {len(failed['no_class'])} items: no classification"
@@ -242,19 +250,19 @@ class CreateLightcurves(object):
             dataset_h5_combined = lcdata.from_light_curves(lc_list)
 
             dataset_h5_bts.write_hdf5(
-                os.path.join(train_dir, f"{self.name}_bts.h5"), overwrite=True
+                str(self.train_dir / f"{self.name}_bts.h5"), overwrite=True
             )
             dataset_h5_noisy.write_hdf5(
-                os.path.join(train_dir, f"{self.name}_noisy.h5"), overwrite=True
+                str(self.train_dir / f"{self.name}_noisy.h5"), overwrite=True
             )
             dataset_h5_combined.write_hdf5(
-                os.path.join(train_dir, f"{self.name}_combined.h5"), overwrite=True
+                str(self.train_dir / f"{self.name}_combined.h5"), overwrite=True
             )
 
         elif self.output_format == "csv":
             for lc in lc_list:
-                io.save_csv_with_header(lc, savedir=train_dir)
+                io.save_csv_with_header(lc, savedir=self.train_dir)
 
         self.logger.info(
-            f"Saved to {self.output_format} files in {os.path.abspath(train_dir)}"
+            f"Saved to {self.output_format} files in {self.train_dir.resolve()}"
         )

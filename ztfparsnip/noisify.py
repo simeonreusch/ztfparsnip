@@ -4,6 +4,8 @@
 
 import os, numpy, logging, re, os, glob, random
 
+from pathlib import Path
+
 import numpy as np
 import numpy.ma as ma
 import pandas as pd
@@ -17,10 +19,17 @@ from copy import copy
 from ztfparsnip import io
 
 delta_z: float = 0.1
-# n_sim: float = 10
 
 SN_threshold: float = 5.0
 n_det_threshold: float = 5.0
+
+"""
+IDEAS FOR FUTURE VERSIONS:
+- add random observation time "wiggles" to K-correction
+- random datapoint dropout (sparsify augmented sample) 
+    -> that should be included if training without noise (for a fair comparison between "standard" augmentation and noisification)
+- 
+"""
 
 
 def get_astropy_table(df, header, remove_poor_conditions=True, phase_lim=True):
