@@ -67,9 +67,13 @@ class CreateLightcurves(object):
                 "sn_other": 12520,
             }
 
+        weights_info = "\n"
+        for k, v in self.weights.items():
+            weights_info += f"{k}: {v}\n"
+
         self.logger.info("Creating noisified training data.")
         self.logger.info(
-            f"Selected configuration\nweights: {self.weights}\nvalidation fraction: {self.validation_fraction}\nvalidation seed: {self.validation_seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}"
+            f"\n---------------------------------\nSelected configuration\nweights: {weights_info}\nvalidation fraction: {self.validation_fraction}\nvalidation seed: {self.validation_seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}\n---------------------------------"
         )
 
     def get_simple_class(self, bts_class: str) -> str:
@@ -167,7 +171,15 @@ class CreateLightcurves(object):
                 )
 
         if relative_weighting is True:
-            print("relative")
+            raise ValueError("Relative weighting is not implemented yet")
+
+        availability = ""
+        for k, v in classes_available.items():
+            availability += f"{k}: {classes_available[k]['entries']}\n"
+        self.logger.info(
+            f"\n---------------------------------\nLightcurves available:\n{availability}---------------------------------"
+        )
+        quit()
 
         if relative_weighting is False:
             for c, target_n in self.weights.items():
