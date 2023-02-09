@@ -312,3 +312,49 @@ class CreateLightcurves(object):
         self.logger.info(
             f"Saved to {self.output_format} files in {self.train_dir.resolve()}"
         )
+
+
+    def create_magdist_plot(self, n: int | None = None):
+        """
+        Creat a plot to show the magnitude vs magnitude error distribution for the sample (BTS vs. noisified)
+        """
+        failed = {"no_z": [], "no_class": [], "no_lc_after_cuts": []}
+
+        bts_mag_list = []
+        bts_magerr_list = []
+        noisy_mag_list = []
+        noisy_magerr_list = []
+
+        generated = {k: 0 for (k, v) in self.selection.items()}
+
+        for lc, header in self.get_lightcurves(end=n):
+            if lc is not None:
+                if (c := header.get("simple_class")) is not None:
+                    if c in self.selection.keys():
+                        multiplier = self.selection[c]
+                        bts_lc, noisy_lcs = noisify.noisify_lightcurve(
+                            lc, header, multiplier
+                        )
+                        if bts_lc is not None:
+                            bts_mag_list.append(bts_lc['magpsf'].data)
+                            bts_magerr_list.append(bts_lc['sigmapsf'].data)
+                            noisy_mag_list.extend(noisy_lcs['magpsf'].data)
+                            noisy_magerr_list.extend(noisy_lcs['sigmapsf'].data)
+                            this_round = 1 + len(noisy_lcs)
+                            generated.update({c: generated[c] + this_round})
+
+                        else:
+                            failed["no_lc_after_cuts"].append(header.get("name"))
+                else:
+                    failed["no_class"].append(header.get("name"))
+            else:
+                failed["no_z"].append(header.get("name"))
+
+        self.logger.info(
+            f"{len(failed['no_z'])} items: no redshift | {len(failed['no_lc_after_cuts'])} items: lc does not survive cuts | {len(failed['no_class'])} items: no classification"
+        )
+
+        self.logger.info(f"Created per class: {generated}")
+
+        plot_dist = plot.plot_magnitude_dist(bts_mag_list, bts_magerr_list, noisy_mag_list, noisy_magerr_list)
+        plt.savefig(self.train_dir / "mag_vs_magerr.pdf", format="pdf", bbox_inches="tight")
