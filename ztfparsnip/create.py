@@ -187,7 +187,7 @@ class CreateLightcurves(object):
             relative_weighting = False
 
         # Now we count classes
-        for c in self.config["simpleclasses"]:
+        for c in self.classkey:
             classes_available.update({c: {"ztfids": []}})
             for entry in self.headers.values():
                 if entry.get("simple_class") == c:
