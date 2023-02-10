@@ -123,20 +123,12 @@ class Noisify(object):
         phase limits
         """
         if self.remove_poor_conditions:
-            magpsf = self.table["magpsf"][self.table["pass"] == 1]
-            sigmapsf = self.table["sigmapsf"][self.table["pass"] == 1]
-            fid = self.table["filterid"][self.table["pass"] == 1]
-            jd = self.table["jd"][self.table["pass"] == 1]
-        else:
-            magpsf = self.table["magpsf"]
-            sigmapsf = self.table["sigmapsf"]
-            fid = self.table["filterid"]
-            jd = self.table["jd"]
+            self.table = self.table[self.table["pass"] == 1]
 
-        jd = np.array(jd)
-        magpsf = np.array(magpsf)
-        sigmapsf = np.array(sigmapsf)
-        fid = np.array(fid)
+        jd = np.array(self.table["jd"])
+        magpsf = np.array(self.table["magpsf"])
+        sigmapsf = np.array(self.table["sigmapsf"])
+        fid = np.array(self.table["filterid"])
 
         if self.phase_lim:
             if self.header["bts_class"] in [
