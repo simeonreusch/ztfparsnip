@@ -130,7 +130,7 @@ class CreateLightcurves(object):
                 simple_class = self.get_simple_class(
                     classkey=self.classkey, bts_class=bts_class
                 )
-                header["simple_class"] = simple_class
+                header[self.classkey] = simple_class
                 yield lc, header
             else:
                 yield None, header
@@ -148,7 +148,7 @@ class CreateLightcurves(object):
 
             for ztfid in tqdm(self.ztfids, total=len(self.ztfids)):
                 _, header = io.get_lightcurve(ztfid=ztfid, lc_dir=self.lc_dir)
-                header["simple_class"] = self.get_simple_class(
+                header[self.classkey] = self.get_simple_class(
                     classkey=self.classkey, bts_class=header.get("bts_class")
                 )
                 headers_raw.update({header.get("name"): header})
@@ -190,7 +190,7 @@ class CreateLightcurves(object):
         for c in self.classkey:
             classes_available.update({c: {"ztfids": []}})
             for entry in self.headers.values():
-                if entry.get("simple_class") == c:
+                if entry.get(self.classkey) == c:
                     classes_available.get(c).get("ztfids").append(entry.get("name"))
             classes_available[c]["entries"] = len(
                 classes_available.get(c).get("ztfids")
