@@ -35,9 +35,12 @@ def plot_lc(
         noisy_table = noisy_table[noisy_table["band"] != "ztfi"]
 
     if sig_noise_mask:
-        s_n = np.abs(np.array(noisy_table["flux"] / noisy_table["fluxerr"]))
-        mask = s_n > 3.0
-        noisy_table = noisy_table[mask]
+        s_n_noisy = np.abs(np.array(noisy_table["flux"] / noisy_table["fluxerr"]))
+        s_n_orig = np.abs(np.array(bts_table["flux"] / bts_table["fluxerr"]))
+        mask_noisy = s_n_noisy > 5.0
+        mask_orig = s_n_orig > 5.0
+        noisy_table = noisy_table[mask_noisy]
+        bts_table = bts_table[mask_orig]
 
     if len(noisy_table) == 0:
         return None
@@ -73,65 +76,65 @@ def plot_lc(
         ls="none",
         elinewidth=1.2,
     )
-    ax.scatter(bts_table["jd"] - peakjd, bts_table["magpsf"], c=col, marker="o", s=20)
+    # ax.scatter(bts_table["jd"] - peakjd, bts_table["magpsf"], c=col, marker="o", s=20)
 
-    ax.errorbar(
-        noisy_table["jd"] - peakjd,
-        noisy_table["magpsf"],
-        yerr=noisy_table["sigmapsf"],
-        ecolor=col_noisy,
-        ls="none",
-        elinewidth=1.2,
-    )
-    ax.scatter(
-        noisy_table["jd"] - peakjd, noisy_table["magpsf"], c=col_noisy, marker="o", s=20
-    )
+    # ax.errorbar(
+    #     noisy_table["jd"] - peakjd,
+    #     noisy_table["magpsf"],
+    #     yerr=noisy_table["sigmapsf"],
+    #     ecolor=col_noisy,
+    #     ls="none",
+    #     elinewidth=1.2,
+    # )
+    # ax.scatter(
+    #     noisy_table["jd"] - peakjd, noisy_table["magpsf"], c=col_noisy, marker="o", s=20
+    # )
 
-    # legend maker
-    ax.scatter(
-        1000,
-        0,
-        c="crimson",
-        s=20,
-        label=r"r band at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
-    )
-    ax.scatter(
-        1000,
-        0,
-        c="forestgreen",
-        s=20,
-        label=r"g band at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
-    )
-    if plot_iband:
-        ax.scatter(
-            1000,
-            0,
-            c="darkorange",
-            s=20,
-            label=r"i band lc at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
-        )
-    ax.scatter(
-        1000,
-        0,
-        c="orchid",
-        s=20,
-        label=r"r band at $z = %.2f$" % (float(noisy_table.meta["z"])),
-    )
-    ax.scatter(
-        1000,
-        0,
-        c="mediumblue",
-        s=20,
-        label=r"g band at $z = %.2f$" % (float(noisy_table.meta["z"])),
-    )
-    if plot_iband:
-        ax.scatter(
-            1000,
-            0,
-            c="goldenrod",
-            s=20,
-            label=r"i band lc at $z = %.2f$" % (float(noisy_table.meta["z"])),
-        )
+    # # legend maker
+    # ax.scatter(
+    #     1000,
+    #     0,
+    #     c="crimson",
+    #     s=20,
+    #     label=r"r band at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
+    # )
+    # ax.scatter(
+    #     1000,
+    #     0,
+    #     c="forestgreen",
+    #     s=20,
+    #     label=r"g band at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
+    # )
+    # if plot_iband:
+    #     ax.scatter(
+    #         1000,
+    #         0,
+    #         c="darkorange",
+    #         s=20,
+    #         label=r"i band lc at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
+    #     )
+    # ax.scatter(
+    #     1000,
+    #     0,
+    #     c="orchid",
+    #     s=20,
+    #     label=r"r band at $z = %.2f$" % (float(noisy_table.meta["z"])),
+    # )
+    # ax.scatter(
+    #     1000,
+    #     0,
+    #     c="mediumblue",
+    #     s=20,
+    #     label=r"g band at $z = %.2f$" % (float(noisy_table.meta["z"])),
+    # )
+    # if plot_iband:
+    #     ax.scatter(
+    #         1000,
+    #         0,
+    #         c="goldenrod",
+    #         s=20,
+    #         label=r"i band lc at $z = %.2f$" % (float(noisy_table.meta["z"])),
+    #     )
 
     ax.set_ylabel("Magnitude (AB)")
     ax.set_xlabel("Time after peak (days)")

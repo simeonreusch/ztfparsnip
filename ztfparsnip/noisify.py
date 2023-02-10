@@ -124,7 +124,6 @@ class Noisify(object):
             all_tables = [table]
             all_tables.extend(noisy_lcs)
             for t in all_tables:
-                # print(t)
                 t["flux"] = self.convert_flux_to_original_zp(
                     t["flux"].value, t["magzp_orig"].value
                 )

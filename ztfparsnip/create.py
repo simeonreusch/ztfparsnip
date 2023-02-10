@@ -149,7 +149,7 @@ class CreateLightcurves(object):
             for ztfid in tqdm(self.ztfids, total=len(self.ztfids)):
                 _, header = io.get_lightcurve(ztfid=ztfid, lc_dir=self.lc_dir)
                 header["simple_class"] = self.get_simple_class(
-                    classkey=classkey, bts_class=header.get("bts_class")
+                    classkey=self.classkey, bts_class=header.get("bts_class")
                 )
                 headers_raw.update({header.get("name"): header})
 
