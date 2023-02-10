@@ -116,7 +116,7 @@ def plot_magnitude_dist(lightcurve_dict):
                 all_new_mag_err.extend(lc["sigmapsf"])
 
     # Get data in right format for plotting
-    all_old_mag = np.asarray(all_old_mag)
+    all_old_mag = np.array(all_old_mag)
     all_old_mag_err = np.array(all_old_mag_err)
     all_new_mag = np.array(all_new_mag)
     all_new_mag_err = np.array(all_new_mag_err)
@@ -137,8 +137,7 @@ def plot_magnitude_dist(lightcurve_dict):
     df = pd.DataFrame(data=dat)
 
     # Make cuts
-    # df2 = df[(df['Magnitude'] < 22.) & (df['Magnitude error'] < 1.) & (df['Magnitude'] > 17.)]
-    df2 = df.copy()
+    df2 = df[(df['Magnitude'] < 22.) & (df['Magnitude error'] < 1.) & (df['Magnitude'] > 17.)]
 
     # Make binned scatter points
     # sort on mag
