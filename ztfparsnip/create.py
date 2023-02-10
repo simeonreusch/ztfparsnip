@@ -27,7 +27,7 @@ class CreateLightcurves(object):
         self,
         weights: None | dict[Any] = None,
         validation_fraction: float = 0.1,
-        validation_seed: int | None = None,
+        seed: int | None = None,
         bts_baseline_dir: str | None = None,
         name: str = "train",
         reprocess_headers: bool = False,
@@ -40,13 +40,13 @@ class CreateLightcurves(object):
         self.logger.debug("Creating lightcurves")
         self.weights = weights
         self.validation_fraction = validation_fraction
-        self.validation_seed = validation_seed
+        self.seed = seed
         self.name = name
         self.output_format = output_format
         self.plot_magdist = plot_magdist
         self.train_dir = train_dir
 
-        self.rng = default_rng(seed=validation_seed)
+        self.rng = default_rng(seed=self.seed)
 
         if isinstance(self.train_dir, str):
             self.train_dir = Path(self.train_dir)
@@ -78,7 +78,7 @@ class CreateLightcurves(object):
 
         self.logger.info("Creating noisified training data.")
         self.logger.info(
-            f"\n---------------------------------\nSelected configuration\nweights: {weights_info}\nvalidation fraction: {self.validation_fraction}\nvalidation seed: {self.validation_seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}\n---------------------------------"
+            f"\n---------------------------------\nSelected configuration\nweights: {weights_info}\nvalidation fraction: {self.validation_fraction}\nseed: {self.seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}\n---------------------------------"
         )
 
     def get_simple_class(self, bts_class: str) -> str:
@@ -247,6 +247,7 @@ class CreateLightcurves(object):
                                 table=lc,
                                 header=header,
                                 multiplier=0,
+                                seed=self.seed,
                                 # output_format=self.output_format,
                             )
                             validation_lc, _ = noisify.noisify_lightcurve()
@@ -255,7 +256,10 @@ class CreateLightcurves(object):
 
                         else:
                             noisify = Noisify(
-                                table=lc, header=header, multiplier=self.selection[c]
+                                table=lc,
+                                header=header,
+                                multiplier=self.selection[c],
+                                seed=self.seed,
                             )
                             bts_lc, noisy_lcs = noisify.noisify_lightcurve()
                             if bts_lc is not None:

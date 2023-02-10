@@ -43,6 +43,7 @@ class Noisify(object):
         multiplier: int,
         remove_poor_conditions: bool = True,
         phase_lim: bool = True,
+        seed: int = None,
     ):
         super(Noisify, self).__init__()
         self.table = table
@@ -50,8 +51,9 @@ class Noisify(object):
         self.multiplier = multiplier
         self.remove_poor_conditions = remove_poor_conditions
         self.phase_lim = phase_lim
+        self.seed = seed
 
-        self.noisify_lightcurve()
+        self.rng = default_rng(seed=self.seed)
 
     def noisify_lightcurve(self):
         """
@@ -205,14 +207,14 @@ class Noisify(object):
         zp = this_lc["zp"]
 
         max_z = truez + delta_z
-        z_list = np.random.power(4, 10000) * max_z
+        z_list = self.rng.power(4, 10000) * max_z
         z_list = z_list[z_list > truez]
         noisy_lc_list = []
         z_list_update = []
 
         # while len(z_list_update) < multiplier:
 
-        new_z = random.choice(z_list)
+        new_z = self.rng.choice(z_list)
 
         delta_m = cosmo.distmod(new_z) - cosmo.distmod(truez)
         flux_new = 10 ** ((25 - mag - delta_m.value) / 2.5)
