@@ -253,11 +253,9 @@ class CreateLightcurves(object):
                                 header=header,
                                 multiplier=0,
                                 seed=self.seed,
-                                # output_format=self.output_format,
                             )
                             validation_lc, _ = noisify.noisify_lightcurve()
                             if validation_lc is not None:
-                                # validation_lc_list.append(validation_lc)
                                 final_lightcurves["validation"].append(validation_lc)
 
                         else:
@@ -269,19 +267,21 @@ class CreateLightcurves(object):
                             )
                             bts_lc, noisy_lcs = noisify.noisify_lightcurve()
                             if bts_lc is not None:
-                                # bts_lc_list.append(bts_lc)
-                                # noisy_lc_list.extend(noisy_lcs)
+                                for i, noisy_lc in enumerate(noisy_lcs):
+                                    noisy_lc.meta["name"] = (
+                                        noisy_lc.meta["name"] + f"_{i}"
+                                    )
                                 final_lightcurves["bts_orig"].append(bts_lc)
                                 final_lightcurves["bts_noisified"].extend(noisy_lcs)
                                 total = len(noisy_lc_list) + len(bts_lc_list)
                                 this_round = 1 + len(noisy_lcs)
                                 generated.update({c: generated[c] + this_round})
                                 if plot_debug:
-                                    for i, noisy_table in enumerate(noisy_lcs):
-                                        ax = plot.plot_lc(bts_lc, noisy_table)
+                                    for noisy_lc in noisy_lcs:
+                                        ax = plot.plot_lc(bts_lc, noisy_lc)
                                         plt.savefig(
                                             self.train_dir
-                                            / f"{bts_lc.meta['name']}_{i}.pdf",
+                                            / f"{noisy_lc.meta['name']}.pdf",
                                             format="pdf",
                                             bbox_inches="tight",
                                         )

@@ -145,19 +145,16 @@ def save_csv_with_header(lc, savedir: Path) -> str:
     """
     header = lc.meta
 
-    parent_ztfid = lc.meta.get("name")
-    parent_z = header.get("bts_z")
-    z = header.get("z")
+    lc_id = lc.meta.get("name")
 
-    if z == parent_z:
-        name = parent_ztfid
-        filename = f"{parent_ztfid}.csv"
+    if "_" in lc_id:
+        parent_ztfid = lc_id.split("_")[0]
     else:
-        name = f"{parent_ztfid}_{short_id()}"
-        filename = f"{name}.csv"
+        parent_ztfid = lc_id
 
     header["parent_ztfid"] = parent_ztfid
-    header["name"] = name
+
+    filename = f"{lc_id}.csv"
 
     headerstr = ""
     for i, val in header.items():
