@@ -311,7 +311,8 @@ class Noisify(object):
             bandflux_sim = model.bandflux(lc_table["band"], time=lc_table["jd"])
             bandflux_sim[bandflux_sim == 0.0] = 1e-10
             # kcorr_mag_list.append(-2.5 * np.log10(bandflux_obs / bandflux_sim))
-            kcorr_mag_list.append(self.flux_to_mag(bandflux_obs / bandflux_sim, 0))
+            kcorr_mag = np.nan_to_num(self.flux_to_mag(bandflux_obs / bandflux_sim, 0))
+            kcorr_mag_list.append(kcorr_mag)
             kcorr_flux_list.append(bandflux_obs - bandflux_sim)
 
         return kcorr_mag_list, kcorr_flux_list
