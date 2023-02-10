@@ -136,7 +136,7 @@ def plot_lc(
     ax.set_ylabel("Magnitude (AB)")
     ax.set_xlabel("Time after peak (days)")
     ax.set_ylim(np.nanmax(noisy_table["magpsf"]) + 0.3, min(bts_table["magpsf"]) - 0.3)
-    ax.set_xlim(-10, 35)
+    # ax.set_xlim(-10, 35)
     ax.legend()
 
     return ax
@@ -157,7 +157,6 @@ def plot_magnitude_dist(lightcurve_dict):
             elif key == "bts_noisified":
                 all_new_mag.append(lc["magpsf"])
                 all_new_mag_err.append(lc["sigmapsf"])
-
 
     # Get data in right format for plotting
     all_old_mag = np.asarray(all_old_mag)

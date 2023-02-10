@@ -119,15 +119,20 @@ class Noisify(object):
 
             n_iter += 1
 
-        # if self.output_format == "ztfnuclear":
-        #     all_tables = [table]
-        #     all_tables.extend(noisy_lcs)
-        #     for t in all_tables:
-        #         # print(t)
-        #         t["flux"] = self.convert_flux_to_original_zp(
-        #             t["flux"].value, t["magzp_orig"].value
-        # )
-        # quit()
+        # print(noisy_lcs[0])
+        if self.output_format == "ztfnuclear":
+            all_tables = [table]
+            all_tables.extend(noisy_lcs)
+            for t in all_tables:
+                # print(t)
+                t["flux"] = self.convert_flux_to_original_zp(
+                    t["flux"].value, t["magzp_orig"].value
+                )
+                t["fluxerr"] = self.convert_flux_to_original_zp(
+                    t["fluxerr"].value, t["magzp_orig"].value
+                )
+                del t["zp"]
+                t.rename_column("magzp_orig", "zp")
 
         return table, noisy_lcs
 

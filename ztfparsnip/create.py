@@ -25,6 +25,7 @@ class CreateLightcurves(object):
 
     def __init__(
         self,
+        classkey: str | None = None,
         weights: None | dict[Any] = None,
         validation_fraction: float = 0.1,
         k_corr: bool = True,
@@ -33,7 +34,7 @@ class CreateLightcurves(object):
         name: str = "train",
         reprocess_headers: bool = False,
         output_format: str = "parsnip",
-        plot_magdist: bool = True,
+        plot_magdist: bool = False,
         phase_lim: bool = True,
         train_dir: Path = io.TRAIN_DATA,
         plot_dir: Path = io.PLOT_DIR,
@@ -70,6 +71,16 @@ class CreateLightcurves(object):
 
         self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir)
         self.config = io.load_config()
+        classkeys_available = [
+            key for key in list(self.config.keys()) if key != "sncosmo_templates"
+        ]
+
+        if classkey is None:
+            raise ValueError(
+                f"Specify a set of classifications to choose from the config. Available: {classkeys_available}"
+            )
+        else:
+            self.classkey = classkey
 
         self.get_headers(reprocess=reprocess_headers)
 
@@ -90,12 +101,12 @@ class CreateLightcurves(object):
             f"\n---------------------------------\nSelected configuration\nweights: {weights_info}\nk correction: {self.k_corr}\nvalidation fraction: {self.validation_fraction}\nseed: {self.seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}\n---------------------------------"
         )
 
-    def get_simple_class(self, bts_class: str) -> str:
+    def get_simple_class(self, classkey: str, bts_class: str) -> str:
         """
         Look in the config file to get the simple classification for a transient
         """
-        for key, val in self.config["simpleclasses"].items():
-            for entry in self.config["simpleclasses"][key]:
+        for key, val in self.config[classkey].items():
+            for entry in self.config[classkey][key]:
                 if bts_class == entry or bts_class == f"SN {entry}":
                     return key
         return "unclass"
@@ -116,7 +127,9 @@ class CreateLightcurves(object):
             lc, header = io.get_lightcurve(ztfid=ztfid, lc_dir=self.lc_dir)
             if lc is not None:
                 bts_class = header.get("bts_class")
-                simple_class = self.get_simple_class(bts_class)
+                simple_class = self.get_simple_class(
+                    classkey=self.classkey, bts_class=bts_class
+                )
                 header["simple_class"] = simple_class
                 yield lc, header
             else:
@@ -135,7 +148,9 @@ class CreateLightcurves(object):
 
             for ztfid in tqdm(self.ztfids, total=len(self.ztfids)):
                 _, header = io.get_lightcurve(ztfid=ztfid, lc_dir=self.lc_dir)
-                header["simple_class"] = self.get_simple_class(header.get("bts_class"))
+                header["simple_class"] = self.get_simple_class(
+                    classkey=classkey, bts_class=header.get("bts_class")
+                )
                 headers_raw.update({header.get("name"): header})
 
             with open(header_path, "w") as f:
