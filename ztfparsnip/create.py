@@ -27,6 +27,7 @@ class CreateLightcurves(object):
         self,
         weights: None | dict[Any] = None,
         validation_fraction: float = 0.1,
+        k_corr: bool = True,
         seed: int | None = None,
         bts_baseline_dir: Path = io.BTS_LC_BASELINE_DIR,
         name: str = "train",
@@ -42,6 +43,7 @@ class CreateLightcurves(object):
         self.logger.debug("Creating lightcurves")
         self.weights = weights
         self.validation_fraction = validation_fraction
+        self.k_corr = k_corr
         self.seed = seed
         self.name = name
         self.phase_lim = phase_lim
@@ -85,7 +87,7 @@ class CreateLightcurves(object):
 
         self.logger.info("Creating noisified training data.")
         self.logger.info(
-            f"\n---------------------------------\nSelected configuration\nweights: {weights_info}\nvalidation fraction: {self.validation_fraction}\nseed: {self.seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}\n---------------------------------"
+            f"\n---------------------------------\nSelected configuration\nweights: {weights_info}\nk correction: {self.k_corr}\nvalidation fraction: {self.validation_fraction}\nseed: {self.seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}\n---------------------------------"
         )
 
     def get_simple_class(self, bts_class: str) -> str:
@@ -259,8 +261,10 @@ class CreateLightcurves(object):
                             table=lc,
                             header=header,
                             multiplier=multiplier,
+                            k_corr=self.k_corr,
                             seed=self.seed,
                             phase_lim=self.phase_lim,
+                            output_format=self.output_format,
                         )
 
                         if get_validation:
@@ -302,11 +306,12 @@ class CreateLightcurves(object):
             *final_lightcurves["bts_noisified"],
         ]
 
-        if self.plot_magdist:
-            ax2 = plot.plot_magnitude_dist(final_lightcurves)
-            plt.savefig(self.plot_dir/ "mag_vs_magerr.pdf",format="pdf",bbox_inches="tight")
-            plt.close()
-
+        # if self.plot_magdist:
+        #     ax2 = plot.plot_magnitude_dist(final_lightcurves)
+        #     plt.savefig(
+        #         self.plot_dir / "mag_vs_magerr.pdf", format="pdf", bbox_inches="tight"
+        #     )
+        #     plt.close()
 
         self.logger.info(
             f"{len(failed['no_z'])} items: no redshift | {len(failed['no_lc_after_cuts'])} items: lc does not survive cuts | {len(failed['no_class'])} items: no classification"

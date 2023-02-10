@@ -43,6 +43,7 @@ class Noisify(object):
         multiplier: int,
         remove_poor_conditions: bool = True,
         phase_lim: bool = True,
+        k_corr: bool = True,
         seed: int = None,
         output_format: str = "parsnip",
     ):
@@ -52,6 +53,7 @@ class Noisify(object):
         self.multiplier = multiplier
         self.remove_poor_conditions = remove_poor_conditions
         self.phase_lim = phase_lim
+        self.k_corr = k_corr
         self.seed = seed
         self.output_format = output_format
         self.rng = default_rng(seed=self.seed)
@@ -74,17 +76,20 @@ class Noisify(object):
 
         while len(noisy_lcs) < (self.multiplier - 1):
             new_table_list, sim_z_list = self.get_noisified_data(table, delta_z)
-            delta_m_list, delta_f_list = self.get_k_correction(table, sim_z_list)
 
             # Add k correction
-            if delta_m_list != None:
-                for i in range(len(new_table_list)):
-                    new_table_list[i]["magpsf"] = (
-                        new_table_list[i]["magpsf"].data + delta_m_list[i]
-                    )
-                    new_table_list[i]["flux"] = (
-                        new_table_list[i]["flux"].data + delta_f_list[i]
-                    )
+            if self.k_corr:
+                delta_m_list, delta_f_list = self.get_k_correction(table, sim_z_list)
+
+                if delta_m_list != None:
+                    for i in range(len(new_table_list)):
+                        new_table_list[i]["magpsf"] = (
+                            new_table_list[i]["magpsf"].data + delta_m_list[i]
+                        )
+                        new_table_list[i]["flux"] = (
+                            new_table_list[i]["flux"].data + delta_f_list[i]
+                        )
+
             for new_table in new_table_list:
                 peak_idx = np.argmax(new_table["flux"])
                 sig_noise_df = pd.DataFrame(
@@ -114,6 +119,16 @@ class Noisify(object):
 
             n_iter += 1
 
+        # if self.output_format == "ztfnuclear":
+        #     all_tables = [table]
+        #     all_tables.extend(noisy_lcs)
+        #     for t in all_tables:
+        #         # print(t)
+        #         t["flux"] = self.convert_flux_to_original_zp(
+        #             t["flux"].value, t["magzp_orig"].value
+        # )
+        # quit()
+
         return table, noisy_lcs
 
     def get_astropy_table(self):
@@ -129,6 +144,7 @@ class Noisify(object):
         magpsf = np.array(self.table["magpsf"])
         sigmapsf = np.array(self.table["sigmapsf"])
         fid = np.array(self.table["filterid"])
+        magzp_orig = np.array(self.table["magzp"])
 
         if self.phase_lim:
             if self.header["bts_class"] in [
@@ -155,14 +171,19 @@ class Noisify(object):
 
             jd = jd[mask_phase]
             magpsf = magpsf[mask_phase]
+            magzp_orig = magzp_orig[mask_phase]
             sigmapsf = sigmapsf[mask_phase]
             fid = fid[mask_phase]
 
-        phot = {"jd": jd, "magpsf": magpsf, "sigmapsf": sigmapsf, "fid": fid}
+        phot = {
+            "jd": jd,
+            "magpsf": magpsf,
+            "sigmapsf": sigmapsf,
+            "fid": fid,
+            "magzp_orig": magzp_orig,
+        }
 
-        phot_tab = Table(
-            phot, names=("jd", "magpsf", "sigmapsf", "fid"), meta=self.header
-        )
+        phot_tab = Table(phot, names=phot.keys(), meta=self.header)
         if len(phot_tab) < 1:
             return None
 
@@ -195,6 +216,7 @@ class Noisify(object):
         if len(this_lc) == 0:
             return Table()
         mag = this_lc["magpsf"]
+        magzp_orig = this_lc["magzp_orig"]
         flux_old = this_lc["flux"]
         fluxerr_old = this_lc["fluxerr"]
         truez = float(this_lc.meta["bts_z"])
@@ -223,8 +245,8 @@ class Noisify(object):
         fluxerr_obs = flux_new * df_f_new
 
         # mag_new = -2.5 * np.log10(flux_obs) + zp
-        mag_new = self.flux_to_mag(flux_obs.value, zp)
-        magerr_new = np.abs((2.5 * np.log(10)) * (fluxerr_obs / flux_obs))
+        mag_new = self.flux_to_mag(flux_obs.value, zp).value
+        magerr_new = np.abs((2.5 * np.log(10)) * (fluxerr_obs / flux_obs)).value
         jd_new = this_lc["jd"].data
         band_new = this_lc["band"].data
         zp_new = this_lc["zp"].data
@@ -237,22 +259,14 @@ class Noisify(object):
                 "fluxerr": fluxerr_obs,
                 "magpsf": mag_new,
                 "sigmapsf": magerr_new,
+                "magzp_orig": magzp_orig,
                 "band": band_new,
                 "zp": zp_new,
                 "zpsys": zpsys_new,
             }
             new_lc = Table(
                 phot,
-                names=(
-                    "jd",
-                    "flux",
-                    "fluxerr",
-                    "magpsf",
-                    "sigmapsf",
-                    "band",
-                    "zp",
-                    "zpsys",
-                ),
+                names=phot.keys(),
                 meta=this_lc.meta,
             )
             new_lc.meta["z"] = new_z
@@ -311,3 +325,10 @@ class Noisify(object):
             -2.5 * np.log10(flux, out=np.full(len(flux), np.nan), where=(flux > 0)) + zp
         )
         return mag
+
+    @staticmethod
+    def convert_flux_to_original_zp(flux, zp):
+        """
+        Go from flux of zeropoint 25 to flux with original zero point
+        """
+        return flux * 10 ** ((-25 + zp) / 2.5)
