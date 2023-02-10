@@ -2,7 +2,7 @@
 # Author: Alice Townsend (alice.townsend@hu-berlin.de)
 # License: BSD-3-Clause
 
-import os, numpy, logging, re, os, glob, random
+import os, numpy, logging, re, os, glob
 
 from pathlib import Path
 
@@ -225,7 +225,7 @@ class Noisify(object):
         df_f_old = fluxerr_old / flux_old
         df_f_new = 1 / scale * df_f_old
 
-        flux_obs = flux_new + np.random.normal(scale=np.sqrt(flux_new))
+        flux_obs = flux_new + self.rng.normal(scale=np.sqrt(flux_new))
         fluxerr_obs = flux_new * df_f_new
 
         # mag_new = -2.5 * np.log10(flux_obs) + zp

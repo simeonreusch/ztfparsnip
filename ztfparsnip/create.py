@@ -48,6 +48,8 @@ class CreateLightcurves(object):
 
         self.rng = default_rng(seed=self.seed)
 
+        assert self.output_format in ["parsnip", "ztfnuclear"]
+
         if isinstance(self.train_dir, str):
             self.train_dir = Path(self.train_dir)
 
@@ -234,6 +236,9 @@ class CreateLightcurves(object):
         validation_lc_list = []
         bts_lc_list = []
         noisy_lc_list = []
+
+        final_lightcurves = {"validation": [], "bts_orig": [], "bts_noisified": []}
+
         generated = {k: 0 for (k, v) in self.selection.items()}
 
         for lc, header in self.get_lightcurves(end=n):
@@ -252,7 +257,8 @@ class CreateLightcurves(object):
                             )
                             validation_lc, _ = noisify.noisify_lightcurve()
                             if validation_lc is not None:
-                                validation_lc_list.append(validation_lc)
+                                # validation_lc_list.append(validation_lc)
+                                final_lightcurves["validation"].append(validation_lc)
 
                         else:
                             noisify = Noisify(
@@ -263,8 +269,10 @@ class CreateLightcurves(object):
                             )
                             bts_lc, noisy_lcs = noisify.noisify_lightcurve()
                             if bts_lc is not None:
-                                bts_lc_list.append(bts_lc)
-                                noisy_lc_list.extend(noisy_lcs)
+                                # bts_lc_list.append(bts_lc)
+                                # noisy_lc_list.extend(noisy_lcs)
+                                final_lightcurves["bts_orig"].append(bts_lc)
+                                final_lightcurves["bts_noisified"].extend(noisy_lcs)
                                 total = len(noisy_lc_list) + len(bts_lc_list)
                                 this_round = 1 + len(noisy_lcs)
                                 generated.update({c: generated[c] + this_round})
@@ -287,21 +295,34 @@ class CreateLightcurves(object):
                 failed["no_z"].append(header.get("name"))
 
         lc_list = [*bts_lc_list, *noisy_lc_list]
-
+        final_lightcurves["bts_all"] = [
+            *final_lightcurves["bts_orig"],
+            *final_lightcurves["bts_noisified"],
+        ]
         self.logger.info(
             f"{len(failed['no_z'])} items: no redshift | {len(failed['no_lc_after_cuts'])} items: lc does not survive cuts | {len(failed['no_class'])} items: no classification"
         )
 
         self.logger.info(
-            f"Generated {len(noisy_lc_list)+len(bts_lc_list)} lightcurves from {len(bts_lc_list)} original lightcurves"
+            f"Generated {len(final_lightcurves['bts_all'])} lightcurves from {len(final_lightcurves['bts_orig'])} original lightcurves"
         )
-        self.logger.info(f"Kept {len(validation_lc_list)} lightcurves for validation")
+        self.logger.info(
+            f"Kept {len(final_lightcurves['validation'])} lightcurves for validation"
+        )
 
         self.logger.info(f"Created per class: {generated}")
 
         if self.output_format == "parsnip":
 
             # Save h5 files
+            for k, v in final_lightcurves.items():
+                if len(v) > 0:
+                    dataset = lcdata.from_light_curves(v)
+                    dataset.write_hdf5(
+                        str(self.train_dir / f"{self.name}_{k}.h5"), overwrite=True
+                    )
+
+            quit()
             dataset_h5_bts = lcdata.from_light_curves(bts_lc_list)
             dataset_h5_noisy = lcdata.from_light_curves(noisy_lc_list)
             dataset_h5_combined = lcdata.from_light_curves(lc_list)
