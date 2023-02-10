@@ -33,6 +33,7 @@ class CreateLightcurves(object):
         reprocess_headers: bool = False,
         output_format: str = "parsnip",
         plot_magdist: bool = True,
+        phase_lim: bool = True,
         train_dir: Path = io.TRAIN_DATA,
         plot_dir: Path = io.PLOT_DIR,
     ):
@@ -43,6 +44,7 @@ class CreateLightcurves(object):
         self.validation_fraction = validation_fraction
         self.seed = seed
         self.name = name
+        self.phase_lim = phase_lim
         self.output_format = output_format
         self.plot_magdist = plot_magdist
         self.train_dir = train_dir
@@ -258,6 +260,7 @@ class CreateLightcurves(object):
                             header=header,
                             multiplier=multiplier,
                             seed=self.seed,
+                            phase_lim=self.phase_lim,
                         )
 
                         if get_validation:
