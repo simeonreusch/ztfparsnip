@@ -54,7 +54,6 @@ class Noisify(object):
         self.phase_lim = phase_lim
         self.seed = seed
         self.output_format = output_format
-
         self.rng = default_rng(seed=self.seed)
 
     def noisify_lightcurve(self):

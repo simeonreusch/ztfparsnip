@@ -236,10 +236,6 @@ class CreateLightcurves(object):
         """
         failed = {"no_z": [], "no_class": [], "no_lc_after_cuts": []}
 
-        validation_lc_list = []
-        bts_lc_list = []
-        noisy_lc_list = []
-
         final_lightcurves = {"validation": [], "bts_orig": [], "bts_noisified": []}
 
         generated = {k: 0 for (k, v) in self.selection.items()}
@@ -303,6 +299,9 @@ class CreateLightcurves(object):
             *final_lightcurves["bts_orig"],
             *final_lightcurves["bts_noisified"],
         ]
+
+        if self.plot_magdist:
+            plot.plot_magnitude_dist(final_lightcurves)
 
         self.logger.info(
             f"{len(failed['no_z'])} items: no redshift | {len(failed['no_lc_after_cuts'])} items: lc does not survive cuts | {len(failed['no_class'])} items: no classification"
