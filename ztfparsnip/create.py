@@ -274,7 +274,6 @@ class CreateLightcurves(object):
                                     )
                                 final_lightcurves["bts_orig"].append(bts_lc)
                                 final_lightcurves["bts_noisified"].extend(noisy_lcs)
-                                total = len(noisy_lc_list) + len(bts_lc_list)
                                 this_round = 1 + len(noisy_lcs)
                                 generated.update({c: generated[c] + this_round})
                                 if plot_debug:
