@@ -308,12 +308,12 @@ class CreateLightcurves(object):
             *final_lightcurves["bts_noisified"],
         ]
 
-        # if self.plot_magdist:
-        #     ax2 = plot.plot_magnitude_dist(final_lightcurves)
-        #     plt.savefig(
-        #         self.plot_dir / "mag_vs_magerr.pdf", format="pdf", bbox_inches="tight"
-        #     )
-        #     plt.close()
+        if self.plot_magdist:
+            ax2 = plot.plot_magnitude_dist(final_lightcurves)
+            plt.savefig(
+                self.plot_dir / "mag_vs_magerr.pdf", format="pdf", bbox_inches="tight"
+            )
+            plt.close()
 
         self.logger.info(
             f"{len(failed['no_z'])} items: no redshift | {len(failed['no_lc_after_cuts'])} items: lc does not survive cuts | {len(failed['no_class'])} items: no classification"
