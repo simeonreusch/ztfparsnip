@@ -301,7 +301,7 @@ class CreateLightcurves(object):
                                 generated.update({c: generated[c] + this_round})
                                 if plot_debug:
                                     for noisy_lc in noisy_lcs:
-                                        ax = plot.plot_lc(bts_lc, noisy_lc)
+                                        ax = plot.plot_lc(bts_lc, noisy_lc, phase_limit = self.phase_lim)
                                         plt.savefig(
                                             self.plot_dir
                                             / f"{noisy_lc.meta['name']}.pdf",

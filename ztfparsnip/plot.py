@@ -23,6 +23,7 @@ mpl.rcParams["xtick.major.width"] = 1
 def plot_lc(
     bts_table,
     noisy_table,
+    phase_limit: bool = True,
     sig_noise_mask: bool = True,
     fig_size: tuple = (8, 5),
     plot_iband=False,
@@ -89,7 +90,8 @@ def plot_lc(
     ax.set_ylabel("Magnitude (AB)")
     ax.set_xlabel("Time after peak (days)")
     ax.set_ylim(np.nanmax(noisy_table["magpsf"]) + 0.3, min(bts_table["magpsf"]) - 0.3)
-    # ax.set_xlim(-10, 35)
+    if phase_limit:
+        ax.set_xlim(-10, 35)
     ax.legend()
 
     return ax
@@ -105,11 +107,11 @@ def plot_magnitude_dist(lightcurve_dict):
     for key, lc_list in lightcurve_dict.items():
         for lc in lc_list:
             if key == "bts_orig":
-                all_old_mag.append(lc["magpsf"])
-                all_old_mag_err.append(lc["sigmapsf"])
+                all_old_mag.extend(lc["magpsf"])
+                all_old_mag_err.extend(lc["sigmapsf"])
             elif key == "bts_noisified":
-                all_new_mag.append(lc["magpsf"])
-                all_new_mag_err.append(lc["sigmapsf"])
+                all_new_mag.extend(lc["magpsf"])
+                all_new_mag_err.extend(lc["sigmapsf"])
 
     # Get data in right format for plotting
     all_old_mag = np.asarray(all_old_mag)
