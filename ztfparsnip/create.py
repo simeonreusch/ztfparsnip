@@ -294,11 +294,11 @@ class CreateLightcurves(object):
             else:
                 failed["no_z"].append(header.get("name"))
 
-        lc_list = [*bts_lc_list, *noisy_lc_list]
         final_lightcurves["bts_all"] = [
             *final_lightcurves["bts_orig"],
             *final_lightcurves["bts_noisified"],
         ]
+
         self.logger.info(
             f"{len(failed['no_z'])} items: no redshift | {len(failed['no_lc_after_cuts'])} items: lc does not survive cuts | {len(failed['no_class'])} items: no classification"
         )
@@ -322,27 +322,8 @@ class CreateLightcurves(object):
                         str(self.train_dir / f"{self.name}_{k}.h5"), overwrite=True
                     )
 
-            quit()
-            dataset_h5_bts = lcdata.from_light_curves(bts_lc_list)
-            dataset_h5_noisy = lcdata.from_light_curves(noisy_lc_list)
-            dataset_h5_combined = lcdata.from_light_curves(lc_list)
-            dataset_h5_validation = lcdata.from_light_curves(validation_lc_list)
-
-            dataset_h5_bts.write_hdf5(
-                str(self.train_dir / f"{self.name}_bts.h5"), overwrite=True
-            )
-            dataset_h5_noisy.write_hdf5(
-                str(self.train_dir / f"{self.name}_noisy.h5"), overwrite=True
-            )
-            dataset_h5_combined.write_hdf5(
-                str(self.train_dir / f"{self.name}_combined.h5"), overwrite=True
-            )
-            dataset_h5_validation.write_hdf5(
-                str(self.train_dir / f"{self.name}_combined.h5"), overwrite=True
-            )
-
         elif self.output_format == "ztfnuclear":
-            for lc in lc_list:
+            for lc in final_lightcurves["bts_all"]:
                 io.save_csv_with_header(lc, savedir=self.train_dir)
 
         self.logger.info(
