@@ -129,18 +129,20 @@ class CreateLightcurves(object):
         headers_raw = {}
         self.headers = {}
 
-        if not io.BTS_HEADERS.is_file() or reprocess:
+        header_path = self.lc_dir / "headers.json"
+
+        if not header_path.is_file() or reprocess:
 
             for ztfid in tqdm(self.ztfids, total=len(self.ztfids)):
                 _, header = io.get_lightcurve(ztfid=ztfid, lc_dir=self.lc_dir)
                 header["simple_class"] = self.get_simple_class(header.get("bts_class"))
                 headers_raw.update({header.get("name"): header})
 
-            with open(io.BTS_HEADERS, "w") as f:
+            with open(header_path, "w") as f:
                 f.write(json.dumps(headers_raw))
 
         else:
-            with open(io.BTS_HEADERS, "r") as f:
+            with open(header_path, "r") as f:
                 headers_raw = json.load(f)
 
         for k, v in headers_raw.items():
