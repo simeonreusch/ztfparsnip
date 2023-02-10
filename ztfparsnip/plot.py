@@ -142,7 +142,22 @@ def plot_lc(
     return ax
 
 
-def plot_magnitude_dist(all_old_mag, all_old_mag_err, all_new_mag, all_new_mag_err):
+def plot_magnitude_dist(lightcurve_dict):
+
+    all_old_mag = []
+    all_old_mag_err = []
+    all_new_mag = []
+    all_new_mag_err = []
+
+    for key, lc_list in lightcurve_dict.items():
+        for lc in lc_list:
+            if key == "bts_orig":
+                all_old_mag.append(lc["magpsf"])
+                all_old_mag_err.append(lc["sigmapsf"])
+            elif key == "bts_noisified":
+                all_new_mag.append(lc["magpsf"])
+                all_new_mag_err.append(lc["sigmapsf"])
+
 
     # Get data in right format for plotting
     all_old_mag = np.asarray(all_old_mag)

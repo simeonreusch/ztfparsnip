@@ -4,6 +4,8 @@
 
 import os, re, logging, yaml, random, string
 
+from typing import Dict, Any, Tuple
+
 from pathlib import Path
 
 from typing import List
@@ -66,9 +68,10 @@ def add_mag(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+
 def get_lightcurve(
     ztfid: str, lc_dir: str | None = None
-) -> (None | pd.DataFrame, None | dict):
+) -> Tuple[None | pd.DataFrame, None | Dict[Any]]:
     if is_valid_ztfid(ztfid):
         if lc_dir is None:
             lc_dir = BTS_LC_BASELINE_DIR
