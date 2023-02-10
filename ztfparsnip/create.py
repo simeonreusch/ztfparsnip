@@ -320,7 +320,7 @@ class CreateLightcurves(object):
         )
 
         self.logger.info(
-            f"Generated {len(final_lightcurves['bts_all'])} lightcurves from {len(final_lightcurves['bts_orig'])} original lightcurves"
+            f"Generated {len(final_lightcurves['bts_noisified'])} noisified additional lightcurves from {len(final_lightcurves['bts_orig'])} original lightcurves"
         )
         self.logger.info(
             f"Kept {len(final_lightcurves['validation'])} lightcurves for validation"
