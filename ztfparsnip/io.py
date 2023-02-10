@@ -17,8 +17,9 @@ alphabet = string.ascii_lowercase + string.digits
 if ztfdir := os.getenv("ZTFDATA"):
     BTS_LC_BASELINE_DIR = Path(ztfdir) / "nuclear_sample" / "BTS" / "baseline"
     TRAIN_DATA = Path(ztfdir) / "nuclear_sample" / "BTS" / "train"
+    PLOT_DIR = Path(ztfdir) / "nuclear_sample" / "BTS" / "noisified_plots"
 
-    for d in [BTS_LC_BASELINE_DIR, TRAIN_DATA]:
+    for d in [BTS_LC_BASELINE_DIR, TRAIN_DATA, PLOT_DIR]:
         if not os.path.exists(d):
             os.makedirs(d)
 

@@ -28,12 +28,13 @@ class CreateLightcurves(object):
         weights: None | dict[Any] = None,
         validation_fraction: float = 0.1,
         seed: int | None = None,
-        bts_baseline_dir: str | None = None,
+        bts_baseline_dir: Path = io.BTS_LC_BASELINE_DIR,
         name: str = "train",
         reprocess_headers: bool = False,
         output_format: str = "parsnip",
         plot_magdist: bool = True,
         train_dir: Path = io.TRAIN_DATA,
+        plot_dir: Path = io.PLOT_DIR,
     ):
         super(CreateLightcurves, self).__init__()
         self.logger = logging.getLogger(__name__)
@@ -45,6 +46,8 @@ class CreateLightcurves(object):
         self.output_format = output_format
         self.plot_magdist = plot_magdist
         self.train_dir = train_dir
+        self.plot_dir = plot_dir
+        self.lc_dir = bts_baseline_dir
 
         self.rng = default_rng(seed=self.seed)
 
@@ -52,14 +55,14 @@ class CreateLightcurves(object):
 
         if isinstance(self.train_dir, str):
             self.train_dir = Path(self.train_dir)
+        if isinstance(self.lc_dir, str):
+            self.lc_dir = Path(self.lc_dir)
+        if isinstance(self.plot_dir, str):
+            self.plot_dir = Path(self.plot_dir)
 
-        if not self.train_dir.exists():
-            os.makedirs(self.train_dir)
-
-        if bts_baseline_dir is None:
-            self.lc_dir = io.BTS_LC_BASELINE_DIR
-        else:
-            self.lc_dir = bts_baseline_dir
+        for p in [self.train_dir, self.plot_dir]:
+            if not p.exists():
+                os.makedirs(p)
 
         self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir)
         self.config = io.load_config()
@@ -227,9 +230,9 @@ class CreateLightcurves(object):
 
         self.classes_available = classes_available
 
-    def noisify(self, plot_debug: bool = False, n: int | None = None):
+    def create(self, plot_debug: bool = False, n: int | None = None):
         """
-        Noisify the sample
+        Create noisified lightcurves from the sample
         """
         failed = {"no_z": [], "no_class": [], "no_lc_after_cuts": []}
 
@@ -248,23 +251,25 @@ class CreateLightcurves(object):
 
                         # check if it's a validation sample lightcurve
                         if header["name"] in self.validation_sample["all"]["ztfids"]:
-                            noisify = Noisify(
-                                table=lc,
-                                header=header,
-                                multiplier=0,
-                                seed=self.seed,
-                            )
+                            multiplier = 0
+                            get_validation = True
+                        else:
+                            multiplier = self.selection[c]
+                            get_validation = False
+
+                        noisify = Noisify(
+                            table=lc,
+                            header=header,
+                            multiplier=multiplier,
+                            seed=self.seed,
+                        )
+
+                        if get_validation:
                             validation_lc, _ = noisify.noisify_lightcurve()
                             if validation_lc is not None:
                                 final_lightcurves["validation"].append(validation_lc)
 
                         else:
-                            noisify = Noisify(
-                                table=lc,
-                                header=header,
-                                multiplier=self.selection[c],
-                                seed=self.seed,
-                            )
                             bts_lc, noisy_lcs = noisify.noisify_lightcurve()
                             if bts_lc is not None:
                                 for i, noisy_lc in enumerate(noisy_lcs):
@@ -280,7 +285,7 @@ class CreateLightcurves(object):
                                     for noisy_lc in noisy_lcs:
                                         ax = plot.plot_lc(bts_lc, noisy_lc)
                                         plt.savefig(
-                                            self.train_dir
+                                            self.plot_dir
                                             / f"{noisy_lc.meta['name']}.pdf",
                                             format="pdf",
                                             bbox_inches="tight",

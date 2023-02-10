@@ -44,6 +44,7 @@ class Noisify(object):
         remove_poor_conditions: bool = True,
         phase_lim: bool = True,
         seed: int = None,
+        output_format: str = "parsnip",
     ):
         super(Noisify, self).__init__()
         self.table = table
@@ -52,6 +53,7 @@ class Noisify(object):
         self.remove_poor_conditions = remove_poor_conditions
         self.phase_lim = phase_lim
         self.seed = seed
+        self.output_format = output_format
 
         self.rng = default_rng(seed=self.seed)
 
@@ -104,7 +106,8 @@ class Noisify(object):
                 else:
                     res.append(0)
 
-            """Prevent being stuck with a lightcurve never yielding a noisified one making the snt threshold. If it fails 50 times, we move on
+            """
+            Prevent being stuck with a lightcurve never yielding a noisified one making the snt threshold. If it fails 50 times, we move on
             """
             if n_iter == 50:
                 if sum(res[-50:]) == 0:
