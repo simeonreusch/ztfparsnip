@@ -12,7 +12,7 @@ from numpy.random import default_rng
 from tqdm import tqdm
 
 from ztfparsnip import io
-from ztfparsnip import noisify
+from ztfparsnip.noisify import Noisify
 from ztfparsnip import plot
 import lcdata
 
@@ -31,7 +31,7 @@ class CreateLightcurves(object):
         bts_baseline_dir: str | None = None,
         name: str = "train",
         reprocess_headers: bool = False,
-        output_format: str = "h5",
+        output_format: str = "parsnip",
         plot_magdist: bool = True,
         train_dir: Path = io.TRAIN_DATA,
     ):
@@ -243,16 +243,21 @@ class CreateLightcurves(object):
 
                         # check if it's a validation sample lightcurve
                         if header["name"] in self.validation_sample["all"]["ztfids"]:
-                            validation_lc, _ = noisify.noisify_lightcurve(
-                                table=lc, header=header, multiplier=0
+                            noisify = Noisify(
+                                table=lc,
+                                header=header,
+                                multiplier=0,
+                                # output_format=self.output_format,
                             )
+                            validation_lc, _ = noisify.noisify_lightcurve()
                             if validation_lc is not None:
                                 validation_lc_list.append(validation_lc)
 
                         else:
-                            bts_lc, noisy_lcs = noisify.noisify_lightcurve(
+                            noisify = Noisify(
                                 table=lc, header=header, multiplier=self.selection[c]
                             )
+                            bts_lc, noisy_lcs = noisify.noisify_lightcurve()
                             if bts_lc is not None:
                                 bts_lc_list.append(bts_lc)
                                 noisy_lc_list.extend(noisy_lcs)
@@ -290,7 +295,7 @@ class CreateLightcurves(object):
 
         self.logger.info(f"Created per class: {generated}")
 
-        if self.output_format == "h5":
+        if self.output_format == "parsnip":
 
             # Save h5 files
             dataset_h5_bts = lcdata.from_light_curves(bts_lc_list)
@@ -311,7 +316,7 @@ class CreateLightcurves(object):
                 str(self.train_dir / f"{self.name}_combined.h5"), overwrite=True
             )
 
-        elif self.output_format == "csv":
+        elif self.output_format == "ztfnuclear":
             for lc in lc_list:
                 io.save_csv_with_header(lc, savedir=self.train_dir)
 
