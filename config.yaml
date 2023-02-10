@@ -29,6 +29,111 @@ simpleclasses:
     - LRN?
     - afterglow
 
+  sn_ia:
+    - Ia
+    - Ia?
+    - Ia-02cx
+    - Ia-03fg
+    - Ia-18byg
+    - Ia-91b
+    - Ia-91bg
+    - Ia-91bg?
+    - Ia-91T
+    - Ia-91T?
+    - Ia-91T-like
+    - Ia-CSM
+    - Ia-CSM?
+    - Ia-norm
+    - Ia-pec
+    - Iax
+    - Iax?
+    - Iax[02cx-like]
+
+  sn_other:
+    - IIP
+    - II
+    - Type II
+    - IIb?
+    - IIn
+    - Ibn?
+    - Supernova
+    - SLSN-I
+    - Ic-BL?
+    - Ic
+    - Ic-SLSN
+    - SLSN-II
+    - Ib/c?
+    - Ic?
+    - IIn?
+    - Ib
+    - Ic-BL
+    - SLSN I
+    - Ib/c
+    - IIb
+    - II-norm
+    - Ibn
+    - SLSN-I?
+    - II?
+    - IIb-pec
+    - SLSN-I.5
+    - Icn
+    - Ib?
+    - I
+    - Type I
+    - SN
+    - II-pec
+
+  star:
+    - nova
+    - AM CVn
+    - CV?
+    - CV
+    - varstar
+    - Varstar
+    - nova?
+    - star
+    - LBV
+    - var
+
+  tde:
+    - Tidal Disruption Event
+    - TDE
+
+  unclass:
+    - -
+    - None
+
+upperclasses:
+  agn:
+    - AGN
+    - QSO
+    - AGN?
+    - NLSy1?
+    - NLSy
+    - CLAGN
+    - AGN?
+    - NLS1
+    - Seyfert
+    - blazar
+    - galaxy
+
+  baratheon:
+    - Baratheon
+
+  bogus:
+    - bogus
+    - duplicate
+    - bogus?
+
+  other:
+    - FBOT
+    - rock
+    - LRN
+    - ILRT
+    - Ca-rich
+    - LRN?
+    - afterglow
+
   slsn:
     - SLSN-I
     - SLSN I
@@ -86,40 +191,6 @@ simpleclasses:
     - II-norm?
     - IIP
     - IIP?
-    - II-pec
-
-  sn_other:
-    - IIP
-    - II
-    - Type II
-    - IIb?
-    - IIn
-    - Ibn?
-    - Supernova
-    - SLSN-I
-    - Ic-BL?
-    - Ic
-    - Ic-SLSN
-    - SLSN-II
-    - Ib/c?
-    - Ic?
-    - IIn?
-    - Ib
-    - Ic-BL
-    - SLSN I
-    - Ib/c
-    - IIb
-    - II-norm
-    - Ibn
-    - SLSN-I?
-    - II?
-    - IIb-pec
-    - SLSN-I.5
-    - Icn
-    - Ib?
-    - I
-    - Type I
-    - SN
     - II-pec
 
   star:
