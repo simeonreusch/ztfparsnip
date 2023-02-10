@@ -45,96 +45,46 @@ def plot_lc(
     if len(noisy_table) == 0:
         return None
 
-    col = []
-    col_noisy = []
+    bts = bts_table.to_pandas()
+    bts["type"] = "orig"
+    noisy = noisy_table.to_pandas()
+    noisy["type"] = "noisy"
 
-    for i in range(len(bts_table)):
-        if bts_table["band"][i] == "ztfr":
-            col.append("crimson")
-        elif bts_table["band"][i] == "ztfg":
-            col.append("forestgreen")
-        elif bts_table["band"][i] == "ztfi":
-            col.append("darkorange")
-        else:
-            col.append("k")
+    config = {
+        "orig": {
+            "colors": {"ztfg": "forestgreen", "ztfr": "crimson", "ztfi": "darkorange"},
+            "header": bts_table.meta,
+            "z": float(bts_table.meta["bts_z"]),
+        },
+        "noisy": {
+            "colors": {"ztfg": "mediumblue", "ztfr": "orchid", "ztfi": "goldenrod"},
+            "header": noisy_table.meta,
+            "z": float(noisy_table.meta["z"]),
+        },
+    }
+    headers = {"orig": bts_table.meta, "noisy": noisy_table.meta}
 
-    for i in range(len(noisy_table)):
-        if noisy_table["band"][i] == "ztfr":
-            col_noisy.append("orchid")
-        elif noisy_table["band"][i] == "ztfg":
-            col_noisy.append("mediumblue")
-        elif noisy_table["band"][i] == "ztfi":
-            col_noisy.append("goldenrod")
-        else:
-            col_noisy.append("k")
+    if plot_iband:
+        bands_to_use = ["ztfg", "ztfr", "ztfi"]
+    else:
+        bands_to_use = ["ztfg", "ztfr"]
 
-    ax.errorbar(
-        bts_table["jd"] - peakjd,
-        bts_table["magpsf"],
-        yerr=bts_table["sigmapsf"],
-        ecolor=col,
-        ls="none",
-        elinewidth=1.2,
-    )
-    # ax.scatter(bts_table["jd"] - peakjd, bts_table["magpsf"], c=col, marker="o", s=20)
-
-    # ax.errorbar(
-    #     noisy_table["jd"] - peakjd,
-    #     noisy_table["magpsf"],
-    #     yerr=noisy_table["sigmapsf"],
-    #     ecolor=col_noisy,
-    #     ls="none",
-    #     elinewidth=1.2,
-    # )
-    # ax.scatter(
-    #     noisy_table["jd"] - peakjd, noisy_table["magpsf"], c=col_noisy, marker="o", s=20
-    # )
-
-    # # legend maker
-    # ax.scatter(
-    #     1000,
-    #     0,
-    #     c="crimson",
-    #     s=20,
-    #     label=r"r band at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
-    # )
-    # ax.scatter(
-    #     1000,
-    #     0,
-    #     c="forestgreen",
-    #     s=20,
-    #     label=r"g band at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
-    # )
-    # if plot_iband:
-    #     ax.scatter(
-    #         1000,
-    #         0,
-    #         c="darkorange",
-    #         s=20,
-    #         label=r"i band lc at $z = %.2f$" % (float(bts_table.meta["bts_z"])),
-    #     )
-    # ax.scatter(
-    #     1000,
-    #     0,
-    #     c="orchid",
-    #     s=20,
-    #     label=r"r band at $z = %.2f$" % (float(noisy_table.meta["z"])),
-    # )
-    # ax.scatter(
-    #     1000,
-    #     0,
-    #     c="mediumblue",
-    #     s=20,
-    #     label=r"g band at $z = %.2f$" % (float(noisy_table.meta["z"])),
-    # )
-    # if plot_iband:
-    #     ax.scatter(
-    #         1000,
-    #         0,
-    #         c="goldenrod",
-    #         s=20,
-    #         label=r"i band lc at $z = %.2f$" % (float(noisy_table.meta["z"])),
-    #     )
+    df = pd.concat([bts, noisy])
+    for band in bands_to_use:
+        for lc_type in ["orig", "noisy"]:
+            label = f"${band[-1:]}$-band at $z={config[lc_type]['z']:.2f}$"
+            _df = df.query("type==@lc_type and band==@band")
+            ax.errorbar(
+                x=_df["jd"] - peakjd,
+                y=_df.magpsf,
+                yerr=_df.sigmapsf,
+                ecolor=config[lc_type]["colors"][band],
+                ls="none",
+                fmt=".",
+                c=config[lc_type]["colors"][band],
+                elinewidth=1.2,
+                label=label,
+            )
 
     ax.set_ylabel("Magnitude (AB)")
     ax.set_xlabel("Time after peak (days)")
