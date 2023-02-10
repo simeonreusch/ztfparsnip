@@ -187,7 +187,7 @@ class CreateLightcurves(object):
             relative_weighting = False
 
         # Now we count classes
-        for c in self.classkey:
+        for c in self.config[self.classkey]:
             classes_available.update({c: {"ztfids": []}})
             for entry in self.headers.values():
                 if entry.get(self.classkey) == c:
@@ -195,7 +195,6 @@ class CreateLightcurves(object):
             classes_available[c]["entries"] = len(
                 classes_available.get(c).get("ztfids")
             )
-
         for c in self.weights:
             if c not in classes_available.keys():
                 raise ValueError(
@@ -263,7 +262,7 @@ class CreateLightcurves(object):
 
         for lc, header in self.get_lightcurves(end=n):
             if lc is not None:
-                if (c := header.get("simple_class")) is not None:
+                if (c := header[self.classkey]) is not None:
                     if c in self.selection.keys():
 
                         # check if it's a validation sample lightcurve
