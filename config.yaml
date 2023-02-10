@@ -1,31 +1,92 @@
 simpleclasses:
-  sn_ia:
-    - Ia
-    - Ia-pec
-    - Ia-02cx
-    - Ia-91b
-    - Ia-18byg
-    - Ia-CSM
-    - Type I
-    - Ia-CSM?
-    - Ia-03fg
-    - Ia-91bg
-    - Ia-91bg?
-    - Ia-91T
-    - Ia-norm
-    - Iax
-    - Ia-03fg
-    - Ia?
-    - Ia-91T-like
-    - Ia-pec
-    - Iax[02cx-like]
+  agn:
+    - AGN
+    - QSO
+    - AGN?
+    - NLSy1?
+    - NLSy
+    - CLAGN
+    - AGN?
+    - NLS1
+    - Seyfert
+    - blazar
+    - galaxy
 
   baratheon:
     - Baratheon
 
-  tde:
-    - Tidal Disruption Event
-    - TDE
+  bogus:
+    - bogus
+    - duplicate
+    - bogus?
+
+  other:
+    - FBOT
+    - rock
+    - LRN
+    - ILRT
+    - Ca-rich
+    - LRN?
+    - afterglow
+
+  slsn:
+    - SLSN-I
+    - SLSN I
+    - SLSN-I?
+    - SLSN-I.5
+    - SLSN-I.5?
+    - SLSN-II
+    - SLSN-II?
+
+  sn_ia:
+    - Ia
+    - Ia?
+    - Ia-02cx
+    - Ia-03fg
+    - Ia-18byg
+    - Ia-91b
+    - Ia-91bg
+    - Ia-91bg?
+    - Ia-91T
+    - Ia-91T?
+    - Ia-91T-like
+    - Ia-CSM
+    - Ia-CSM?
+    - Ia-norm
+    - Ia-pec
+    - Iax
+    - Iax?
+    - Iax[02cx-like]
+
+  sn_ibc:
+    - Ib
+    - Ib?
+    - Ibn
+    - Ibn?
+    - Ib/c
+    - Ib/c?
+    - Ic
+    - Ic?
+    - Ic-BL
+    - Ic-BL?
+    - Icn
+    - Icn?
+
+  sn_ii:
+    - II
+    - II?
+    - Type II
+    - IIb
+    - IIb?
+    - IIb-pec
+    - IIb-pec?
+    - IIn
+    - IIn?
+    - II-norm
+    - II-norm?
+    - IIP
+    - IIP?
+    - II-pec
 
   sn_other:
     - IIP
@@ -57,38 +118,9 @@ simpleclasses:
     - Icn
     - Ib?
     - I
+    - Type I
     - SN
-
-  bogus:
-    - bogus
-    - duplicate
-    - bogus?
-
-  unclass:
-    - -
-    - None
-
-  other:
-    - FBOT
-    - rock
-    - LRN
-    - ILRT
-    - Ca-rich
-    - LRN?
-    - afterglow
-
-  agn:
-    - AGN
-    - QSO
-    - AGN?
-    - NLSy1?
-    - NLSy
-    - CLAGN
-    - AGN?
-    - NLS1
-    - Seyfert
-    - blazar
-    - galaxy
+    - II-pec
 
   star:
     - nova
@@ -101,6 +133,14 @@ simpleclasses:
     - star
     - LBV
     - var
+
+  tde:
+    - Tidal Disruption Event
+    - TDE
+
+  unclass:
+    - -
+    - None
 
 sncosmo_templates:
   SN Ia: salt2
