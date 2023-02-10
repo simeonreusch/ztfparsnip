@@ -302,8 +302,8 @@ class CreateLightcurves(object):
             *final_lightcurves["bts_noisified"],
         ]
 
-        if self.plot_magdist:
-            plot.plot_magnitude_dist(final_lightcurves)
+        # if self.plot_magdist:
+        #     plot.plot_magnitude_dist(final_lightcurves)
 
         self.logger.info(
             f"{len(failed['no_z'])} items: no redshift | {len(failed['no_lc_after_cuts'])} items: lc does not survive cuts | {len(failed['no_class'])} items: no classification"

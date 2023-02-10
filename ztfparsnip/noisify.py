@@ -166,7 +166,7 @@ class Noisify(object):
             sigmapsf = sigmapsf[mask_phase]
             fid = fid[mask_phase]
 
-            phot = {"jd": jd, "magpsf": magpsf, "sigmapsf": sigmapsf, "fid": fid}
+        phot = {"jd": jd, "magpsf": magpsf, "sigmapsf": sigmapsf, "fid": fid}
 
         phot_tab = Table(
             phot, names=("jd", "magpsf", "sigmapsf", "fid"), meta=self.header
