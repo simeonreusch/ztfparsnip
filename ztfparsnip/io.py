@@ -12,6 +12,7 @@ from typing import List
 
 import pandas as pd
 import numpy as np
+from astropy.time import Time
 
 logger = logging.getLogger(__name__)
 alphabet = string.ascii_lowercase + string.digits
@@ -68,10 +69,7 @@ def add_mag(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-
-def get_lightcurve(
-    ztfid: str, lc_dir: str | None = None
-):
+def get_lightcurve(ztfid: str, lc_dir: str | None = None):
     if is_valid_ztfid(ztfid):
         if lc_dir is None:
             lc_dir = BTS_LC_BASELINE_DIR
@@ -143,7 +141,7 @@ def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
         raise ValueError(f"{ztfid} is not a valid ZTF ID")
 
 
-def save_csv_with_header(lc, savedir: Path) -> str:
+def save_csv_with_header(lc, savedir: Path, output_format: str = "ztfnuclear") -> str:
     """
     Generate a string of the header from a dict, meant to be written to a csv file. Save the lightcurve with the header info as csv
     """
@@ -158,6 +156,19 @@ def save_csv_with_header(lc, savedir: Path) -> str:
 
     header["parent_ztfid"] = parent_ztfid
 
+    if output_format == "ztfnuclear":
+        band_to_filterid = {"ztfg": 1, "ztfr": 2, "ztfi": 3}
+        del lc["zpsys"]
+
+        lc["obsmjd"] = lc["jd"] - 2400000.5
+        del lc["jd"]
+
+        lc.rename_column("zp", "magzp")
+        lc.rename_column("flux", "ampl_corr")
+        lc.rename_column("fluxerr", "ampl_err_corr")
+
+        # lc["filterid"] = [band_to_filterid[i] for i in lc["band"].value]
+
     filename = f"{lc_id}.csv"
 
     headerstr = ""
@@ -166,7 +177,11 @@ def save_csv_with_header(lc, savedir: Path) -> str:
 
     outfile = savedir / filename
 
-    df = lc.to_pandas(index="jd")
+    df = lc.to_pandas()
+    # Time index for use for rolling window
+    df = df.sort_values("obsmjd")
+    obs_jd = Time(df["obsmjd"].values, format="mjd")
+    df = df.set_index(pd.to_datetime(obs_jd.datetime))
 
     if os.path.isfile(outfile):
         os.remove(outfile)

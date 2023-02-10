@@ -354,7 +354,9 @@ class CreateLightcurves(object):
 
         elif self.output_format == "ztfnuclear":
             for lc in final_lightcurves["bts_all"]:
-                io.save_csv_with_header(lc, savedir=self.train_dir)
+                io.save_csv_with_header(
+                    lc, savedir=self.train_dir, output_format=self.output_format
+                )
 
         self.logger.info(
             f"Saved to {self.output_format} files in {self.train_dir.resolve()}"
