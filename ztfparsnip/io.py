@@ -242,10 +242,29 @@ def download_sample():
     Download the BTS + TDE lightcurves from the DESY Nextcloud
     """
     if ZTFDATA := os.getenv("ZTFDATA"):
-        cmd = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE}; unzip {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip -d {ZTFDATA}; rm {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip"
+        cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE}"
+        cmd_extract = (
+            f"unzip {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip -d {ZTFDATA}/ztfparsnip"
+        )
+        cmd_remove_zip = f"rm {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip"
 
-        subprocess.run(cmd, shell=True)
-        logger.info(f"sample download complete")
+        # Download
+        subprocess.run(cmd_dl, shell=True)
+        logger.info(f"Sample download complete, extracting files")
+
+        # Extract
+        subprocess.run(cmd_extract, shell=True)
+        extracted_dir = Path(ZTFDATA) / "ztfparsnip" / "BTS_plus_TDE"
+
+        # Validate
+        nr_files = len([x for x in extracted_dir.glob("*") if x.is_file()])
+        if nr_files == 123:
+            subprocess.run(cmd_remove_zip, shell=True)
+        else:
+            raise ValueError(
+                "Something went wrong with your download. Remove 'ZTFDATA/ztfparsnip/BTS_plus_TDE' and try again"
+            )
+
     else:
         raise ValueError(
             "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See github.com/mickaelrigault/ztfquery"
