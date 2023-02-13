@@ -56,6 +56,14 @@ class CreateLightcurves(object):
 
         self.rng = default_rng(seed=self.seed)
 
+        self.param_info = {
+            "desired # of lightcurves": self.weights,
+            "random seed": self.seed,
+            "phase limit": self.phase_lim,
+            "k correction": self.k_corr,
+            "validation sample fraction": self.validation_fraction,
+        }
+
         assert self.output_format in ["parsnip", "ztfnuclear"]
 
         if isinstance(self.train_dir, str):
@@ -217,9 +225,11 @@ class CreateLightcurves(object):
         if relative_weighting is True:
             raise ValueError("Relative weighting is not implemented yet")
 
+        available_dict = {}
         availability = ""
         for k, v in classes_available.items():
             availability += f"{k}: {classes_available[k]['entries']}\n"
+            available_dict.update({k: classes_available[k]["entries"]})
         self.logger.info(
             f"\n---------------------------------\nLightcurves available:\n{availability}---------------------------------"
         )
@@ -261,15 +271,54 @@ class CreateLightcurves(object):
 
         self.logger.info(f"Expected lightcurves: {expected} ({total} in total)")
 
+        self.param_info.update(
+            {"expected # of lightcurves": expected, "weights": self.selection}
+        )
+        self.param_info.update({"available lightcurves": available_dict})
+
         self.classes_available = classes_available
 
-    def create(self, plot_debug: bool = False, start: int = 0, n: int | None = None):
+        # noisification_paramdict = {
+        #     "max_redshift_delta": 0.1,
+        #     "classes": ["tde", "slsn", "baratheon", "snia"],
+        #     "redshift_dist": "cubic",
+        #     "k_scale": 1.25,
+        #     "phase_limit": {"long_lived": [-50, 200], "short_lived": [-30, 50]},
+        #     "no_k_classes": ["tde", "slsn"],
+        #     "sn_cuts": {"n_det": 5, "sn_threshold": 5},
+        #     "k_correction": None,
+        #     "augmentation": {
+        #         "mode": "per_class",
+        #         "multiplier": {"snia": 10, "slsn": 100, "tde": 100, "baratheon": 100},
+        #     },
+        #     "verification_percentage": 0.1,
+        # }
+
+    def create(
+        self,
+        plot_debug: bool = False,
+        start: int = 0,
+        delta_z: float = 0.1,
+        SN_threshold: float = 5.0,
+        n_det_threshold: float = 5.0,
+        n: int | None = None,
+    ):
         """
         Create noisified lightcurves from the sample
         """
         failed = {"no_z": [], "no_class": [], "no_lc_after_cuts": []}
 
         final_lightcurves = {"validation": [], "bts_orig": [], "bts_noisified": []}
+
+        self.param_info.update(
+            {
+                "max_redshift_delta": delta_z,
+                "sn_cuts": {
+                    "SN_threshold": SN_threshold,
+                    "n_det_threshold": n_det_threshold,
+                },
+            }
+        )
 
         generated = {k: 0 for (k, v) in self.selection.items()}
 
@@ -292,6 +341,9 @@ class CreateLightcurves(object):
                             k_corr=self.k_corr,
                             seed=self.seed,
                             phase_lim=self.phase_lim,
+                            delta_z=delta_z,
+                            SN_threshold=SN_threshold,
+                            n_det_threshold=n_det_threshold,
                             output_format=self.output_format,
                         )
 
@@ -356,6 +408,8 @@ class CreateLightcurves(object):
 
         self.logger.info(f"Created per class: {generated}")
 
+        self.param_info.update({"generated lightcurves": generated})
+
         if self.output_format == "parsnip":
             # Save h5 files
             for k, v in final_lightcurves.items():
@@ -374,3 +428,6 @@ class CreateLightcurves(object):
         self.logger.info(
             f"Saved to {self.output_format} files in {self.train_dir.resolve()}"
         )
+
+        with open(self.train_dir / "info.json", "w") as f:
+            json.dump(self.param_info, f)
