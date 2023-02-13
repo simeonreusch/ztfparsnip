@@ -75,7 +75,7 @@ class CreateLightcurves(object):
         """
         if self.lc_dir == io.BTS_LC_BASELINE_DIR:
             nr_files = len([x for x in self.lc_dir.glob("*") if x.is_file()])
-            if nr_files < 5:
+            if nr_files < 6841:
                 self.logger.info("Downloading sample")
                 io.download_sample()
 

@@ -249,16 +249,16 @@ def download_sample():
         cmd_remove_zip = f"rm {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip"
 
         # Download
-        subprocess.run(cmd_dl, shell=True)
+        # subprocess.run(cmd_dl, shell=True)
         logger.info(f"Sample download complete, extracting files")
 
         # Extract
-        subprocess.run(cmd_extract, shell=True)
+        # subprocess.run(cmd_extract, shell=True)
         extracted_dir = Path(ZTFDATA) / "ztfparsnip" / "BTS_plus_TDE"
 
         # Validate
         nr_files = len([x for x in extracted_dir.glob("*") if x.is_file()])
-        if nr_files == 123:
+        if nr_files == 6841:
             subprocess.run(cmd_remove_zip, shell=True)
         else:
             raise ValueError(
