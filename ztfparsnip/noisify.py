@@ -230,8 +230,6 @@ class Noisify(object):
         noisy_lc_list = []
         z_list_update = []
 
-        # while len(z_list_update) < multiplier:
-
         new_z = self.rng.choice(z_list)
 
         delta_m = cosmo.distmod(new_z) - cosmo.distmod(truez)
@@ -246,7 +244,6 @@ class Noisify(object):
         flux_obs = flux_new + self.rng.normal(scale=np.sqrt(flux_new))
         fluxerr_obs = flux_new * df_f_new
 
-        # mag_new = -2.5 * np.log10(flux_obs) + zp
         mag_new = self.flux_to_mag(flux_obs.value, zp).value
         magerr_new = np.abs((2.5 * np.log(10)) * (fluxerr_obs / flux_obs)).value
         jd_new = this_lc["jd"].data
