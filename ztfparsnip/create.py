@@ -263,7 +263,7 @@ class CreateLightcurves(object):
 
         self.classes_available = classes_available
 
-    def create(self, plot_debug: bool = False, n: int | None = None):
+    def create(self, plot_debug: bool = False, start: int = 0, n: int | None = None):
         """
         Create noisified lightcurves from the sample
         """
@@ -273,7 +273,7 @@ class CreateLightcurves(object):
 
         generated = {k: 0 for (k, v) in self.selection.items()}
 
-        for lc, header in self.get_lightcurves(end=n):
+        for lc, header in self.get_lightcurves(start=start, end=n):
             if lc is not None:
                 if (c := header[self.classkey]) is not None:
                     if c in self.selection.keys():

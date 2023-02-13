@@ -136,7 +136,6 @@ class Noisify(object):
         return table, noisy_lcs
 
     def get_astropy_table(self):
-
         """
         Generate astropy table from the provided lightcurve and apply
         phase limits
@@ -214,7 +213,6 @@ class Noisify(object):
         return phot_tab
 
     def get_noisified_data(self, lc_table, delta_z):
-
         this_lc = copy(lc_table)
         this_lc = this_lc[this_lc["flux"] > 0.0]
         if len(this_lc) == 0:

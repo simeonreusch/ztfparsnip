@@ -81,8 +81,7 @@ def get_lightcurve(ztfid: str, lc_dir: str | None = None):
     lc = get_ztfid_dataframe(ztfid=ztfid, lc_dir=lc_dir)
     header = get_ztfid_header(ztfid=ztfid, lc_dir=lc_dir)
 
-    if header.get("bts_z") == "-":
-        # logger.warn(f"{ztfid}: no redshift")
+    if header.get("bts_z") == "-" or header.get("bts_z") is None:
         return None, header
 
     return lc, header
