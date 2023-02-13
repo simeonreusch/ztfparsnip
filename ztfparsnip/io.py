@@ -23,7 +23,7 @@ if ztfdir := os.getenv("ZTFDATA"):
     TRAIN_DATA = BASE_DIR / "train"
     PLOT_DIR = BASE_DIR / "plots"
     DOWNLOAD_URL_SAMPLE = Path(
-        "https://syncandshare.desy.de/index.php/s/GHeGQYxgk5FeToY/download"
+        "https://syncandshare.desy.de/index.php/s/cQHcnXmYDzRGyqG/download"
     )
 
     for d in [BASE_DIR, BTS_LC_BASELINE_DIR, TRAIN_DATA, PLOT_DIR]:

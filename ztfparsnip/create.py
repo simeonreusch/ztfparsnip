@@ -69,6 +69,16 @@ class CreateLightcurves(object):
             if not p.exists():
                 os.makedirs(p)
 
+        """
+        if we are in the default sample dir, check if files are there,
+        check if files are there an download if not
+        """
+        if self.lc_dir == io.BTS_LC_BASELINE_DIR:
+            nr_files = len([x for x in self.lc_dir.glob("*") if x.is_file()])
+            if nr_files < 5:
+                self.logger.info("Downloading sample")
+                io.download_sample()
+
         self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir)
         self.config = io.load_config()
         classkeys_available = [
