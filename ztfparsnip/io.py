@@ -245,7 +245,7 @@ def download_sample():
         cmd = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE}; unzip {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip -d {ZTFDATA}; rm {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip"
 
         subprocess.run(cmd, shell=True)
-        logger.info(f"{sampletype} sample download complete")
+        logger.info(f"sample download complete")
     else:
         raise ValueError(
             "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See github.com/mickaelrigault/ztfquery"
