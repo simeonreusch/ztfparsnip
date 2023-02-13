@@ -90,6 +90,7 @@ def plot_lc(
     ax.set_ylabel("Magnitude (AB)")
     ax.set_xlabel("Time after peak (days)")
     ax.set_ylim(np.nanmax(noisy_table["magpsf"]) + 0.3, min(bts_table["magpsf"]) - 0.3)
+    ax.set_title(str(bts_table.meta["name"] + " : " + str(bts_table.meta["bts_class"])))
 
     if phase_limit:
         ax.set_xlim(-10, 35)
@@ -194,6 +195,7 @@ def plot_magnitude_dist(lightcurve_dict):
         x="Magnitude",
         y="Magnitude error",
         hue="Data type",
+        hue_order = ["Simulated", "Real"],
         kind="kde",
         fill=True,
         alpha=0.6,
@@ -204,7 +206,7 @@ def plot_magnitude_dist(lightcurve_dict):
         df_scatter["Bins"][df_scatter["Data type"] == "Real"],
         df_scatter["Mean error"][df_scatter["Data type"] == "Real"],
         yerr=df_scatter["Std error"][df_scatter["Data type"] == "Real"],
-        c="steelblue",
+        c="darkorange",
         ls="none",
         capsize=3.0,
     )
@@ -212,7 +214,7 @@ def plot_magnitude_dist(lightcurve_dict):
         df_scatter["Bins"][df_scatter["Data type"] == "Simulated"],
         df_scatter["Mean error"][df_scatter["Data type"] == "Simulated"],
         yerr=df_scatter["Std error"][df_scatter["Data type"] == "Simulated"],
-        c="darkorange",
+        c="steelblue",
         ls="none",
         capsize=3.0,
     )
