@@ -145,6 +145,9 @@ class CreateLightcurves(object):
         header_path = self.lc_dir / "headers.json"
 
         if not header_path.is_file() or reprocess:
+            self.logger.info(
+                f"Reading all lightcurves to create header json file for speedup (location: {header_path})."
+            )
 
             for ztfid in tqdm(self.ztfids, total=len(self.ztfids)):
                 _, header = io.get_lightcurve(ztfid=ztfid, lc_dir=self.lc_dir)
@@ -264,7 +267,6 @@ class CreateLightcurves(object):
             if lc is not None:
                 if (c := header[self.classkey]) is not None:
                     if c in self.selection.keys():
-
                         # check if it's a validation sample lightcurve
                         if header["name"] in self.validation_sample["all"]["ztfids"]:
                             multiplier = 0
@@ -301,7 +303,9 @@ class CreateLightcurves(object):
                                 generated.update({c: generated[c] + this_round})
                                 if plot_debug:
                                     for noisy_lc in noisy_lcs:
-                                        ax = plot.plot_lc(bts_lc, noisy_lc, phase_limit = self.phase_lim)
+                                        ax = plot.plot_lc(
+                                            bts_lc, noisy_lc, phase_limit=self.phase_lim
+                                        )
                                         plt.savefig(
                                             self.plot_dir
                                             / f"{noisy_lc.meta['name']}.pdf",
@@ -343,7 +347,6 @@ class CreateLightcurves(object):
         self.logger.info(f"Created per class: {generated}")
 
         if self.output_format == "parsnip":
-
             # Save h5 files
             for k, v in final_lightcurves.items():
                 if len(v) > 0:

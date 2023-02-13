@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 alphabet = string.ascii_lowercase + string.digits
 
 if ztfdir := os.getenv("ZTFDATA"):
-    BTS_LC_BASELINE_DIR = Path(ztfdir) / "nuclear_sample" / "BTS" / "baseline"
-    TRAIN_DATA = Path(ztfdir) / "nuclear_sample" / "BTS" / "train"
-    PLOT_DIR = Path(ztfdir) / "nuclear_sample" / "BTS" / "noisified_plots"
+    BTS_LC_BASELINE_DIR = Path(ztfdir) / "nuclear_sample" / "BTS_plus_TDE" / "baseline"
+    TRAIN_DATA = Path(ztfdir) / "nuclear_sample" / "BTS_plus_TDE" / "train"
+    PLOT_DIR = Path(ztfdir) / "nuclear_sample" / "BTS_plus_TDE" / "noisified_plots"
 
     for d in [BTS_LC_BASELINE_DIR, TRAIN_DATA, PLOT_DIR]:
         if not os.path.exists(d):
@@ -128,7 +128,11 @@ def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
 
                 returndict = {}
                 for i, key in enumerate(headerkeys):
-                    returndict.update({key: headervals[i]})
+                    if headervals[i] == "-":
+                        returnval = None
+                    else:
+                        returnval = headervals[i]
+                    returndict.update({key: returnval})
 
                 returndict["ztfid"] = returndict.get("name")
 
