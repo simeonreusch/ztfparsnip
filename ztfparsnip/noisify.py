@@ -19,11 +19,6 @@ from copy import copy
 
 from ztfparsnip import io
 
-delta_z: float = 0.1
-
-SN_threshold: float = 5.0
-n_det_threshold: float = 5.0
-
 """
 IDEAS FOR FUTURE VERSIONS:
 - add random observation time "wiggles" to K-correction
@@ -46,6 +41,9 @@ class Noisify(object):
         k_corr: bool = True,
         seed: int = None,
         output_format: str = "parsnip",
+        delta_z: float = 0.1,
+        SN_threshold: float = 5.0,
+        n_det_threshold: float = 5,
     ):
         super(Noisify, self).__init__()
         self.table = table
@@ -56,6 +54,9 @@ class Noisify(object):
         self.k_corr = k_corr
         self.seed = seed
         self.output_format = output_format
+        self.delta_z = delta_z
+        self.SN_threshold = SN_threshold
+        self.n_det_threshold = n_det_threshold
         self.rng = default_rng(seed=self.seed)
 
     def noisify_lightcurve(self):
@@ -75,7 +76,7 @@ class Noisify(object):
         n_iter = 0
 
         while len(noisy_lcs) < (self.multiplier - 1):
-            new_table_list, sim_z_list = self.get_noisified_data(table, delta_z)
+            new_table_list, sim_z_list = self.get_noisified_data(table, self.delta_z)
 
             # Add k correction
             if self.k_corr:
@@ -97,11 +98,11 @@ class Noisify(object):
                         "SN": np.abs(np.array(new_table["flux"] / new_table["fluxerr"]))
                     }
                 )
-                count_sn = sig_noise_df[sig_noise_df["SN"] > SN_threshold].count()
+                count_sn = sig_noise_df[sig_noise_df["SN"] > self.SN_threshold].count()
                 if (
                     new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]
-                ) > SN_threshold:
-                    if count_sn[0] >= n_det_threshold:
+                ) > self.SN_threshold:
+                    if count_sn[0] >= self.n_det_threshold:
                         noisy_lcs.append(new_table)
                         res.append(1)
                         res_counter += 1
