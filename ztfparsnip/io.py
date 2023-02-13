@@ -2,7 +2,7 @@
 # Author: Simeon Reusch (simeon.reusch@desy.de)
 # License: BSD-3-Clause
 
-import os, re, logging, yaml, random, string
+import os, re, logging, yaml, random, string, subprocess
 
 from typing import Dict, Any, Tuple
 
@@ -18,15 +18,20 @@ logger = logging.getLogger(__name__)
 alphabet = string.ascii_lowercase + string.digits
 
 if ztfdir := os.getenv("ZTFDATA"):
-    BTS_LC_BASELINE_DIR = Path(ztfdir) / "nuclear_sample" / "BTS_plus_TDE" / "baseline"
-    TRAIN_DATA = Path(ztfdir) / "nuclear_sample" / "BTS_plus_TDE" / "train"
-    PLOT_DIR = Path(ztfdir) / "nuclear_sample" / "BTS_plus_TDE" / "noisified_plots"
+    BASE_DIR = Path(ztfdir) / "ztfparsnip"
+    BTS_LC_BASELINE_DIR = BASE_DIR / "BTS_plus_TDE"
+    TRAIN_DATA = BASE_DIR / "train"
+    PLOT_DIR = BASE_DIR / "plots"
+    DOWNLOAD_URL_SAMPLE = Path(
+        "https://syncandshare.desy.de/index.php/s/GHeGQYxgk5FeToY/download"
+    )
 
-    for d in [BTS_LC_BASELINE_DIR, TRAIN_DATA, PLOT_DIR]:
+    for d in [BASE_DIR, BTS_LC_BASELINE_DIR, TRAIN_DATA, PLOT_DIR]:
         if not os.path.exists(d):
             os.makedirs(d)
 
     BTS_HEADERS = BTS_LC_BASELINE_DIR / "headers.json"
+
 else:
     raise ValueError(
         "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See github.com/mickaelrigault/ztfquery"
@@ -230,3 +235,18 @@ def load_config(config_path: Path | None = None) -> dict:
         config = yaml.safe_load(f)
 
     return config
+
+
+def download_sample():
+    """
+    Download the BTS + TDE lightcurves from the DESY Nextcloud
+    """
+    if ZTFDATA := os.getenv("ZTFDATA"):
+        cmd = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE}; unzip {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip -d {ZTFDATA}; rm {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip"
+
+        subprocess.run(cmd, shell=True)
+        logger.info(f"{sampletype} sample download complete")
+    else:
+        raise ValueError(
+            "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See github.com/mickaelrigault/ztfquery"
+        )
