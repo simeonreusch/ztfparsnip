@@ -85,13 +85,13 @@ class Noisify(object):
             if new_table is not None:
                 # Add k correction
                 if self.k_corr:
-                    delta_m_list, delta_f_list = self.get_k_correction(table, sim_z)
-                    if delta_m_list != None:
+                    delta_m, delta_f = self.get_k_correction(table, sim_z)
+                    if delta_m is not None:
                         new_table["magpsf"] = (
-                            new_table["magpsf"].data + delta_m_list
+                            new_table["magpsf"].data + delta_m
                         )
                         new_table["flux"] = (
-                            new_table["flux"].data + delta_f_list
+                            new_table["flux"].data + delta_f
                         )
                 if self.sig_noise_cut:
                     peak_idx = np.argmax(new_table["flux"])
@@ -311,19 +311,15 @@ class Noisify(object):
 
         bandflux_obs = model.bandflux(band=lc_table["band"], time=lc_table["jd"])
 
-        kcorr_mag_list = []
-        kcorr_flux_list = []
-
         # get the simulation flux and find k-correction mag
         model["z"] = z_sim
         bandflux_sim = model.bandflux(lc_table["band"], time=lc_table["jd"])
         bandflux_sim[bandflux_sim == 0.0] = 1e-10
         # kcorr_mag_list.append(-2.5 * np.log10(bandflux_obs / bandflux_sim))
         kcorr_mag = np.nan_to_num(self.flux_to_mag(bandflux_obs / bandflux_sim, 0))
-        kcorr_mag_list.append(kcorr_mag)
-        kcorr_flux_list.append(bandflux_obs - bandflux_sim)
+        kcorr_flux = bandflux_obs - bandflux_sim
 
-        return kcorr_mag_list, kcorr_flux_list
+        return kcorr_mag, kcorr_flux
 
     @staticmethod
     def flux_to_mag(flux, zp):
