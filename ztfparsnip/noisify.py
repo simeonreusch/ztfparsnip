@@ -60,6 +60,8 @@ class Noisify(object):
         self.SN_threshold = SN_threshold
         self.n_det_threshold = n_det_threshold
         self.rng = default_rng(seed=self.seed)
+        self.z_list = (self.rng.power(4, 10000) * (float(self.header['bts_z']) + self.delta_z))
+        self.z_valid_list = self.z_list[self.z_list > float(self.header['bts_z'])]
 
     def noisify_lightcurve(self):
         """
@@ -78,22 +80,19 @@ class Noisify(object):
         n_iter = 0
 
         while len(noisy_lcs) < (self.multiplier - 1):
-            new_table_list, sim_z_list = self.get_noisified_data(table, self.delta_z)
+            new_table, sim_z = self.get_noisified_data(table, self.delta_z)
 
-            # Add k correction
-            if self.k_corr:
-                delta_m_list, delta_f_list = self.get_k_correction(table, sim_z_list)
-
-                if delta_m_list != None:
-                    for i in range(len(new_table_list)):
-                        new_table_list[i]["magpsf"] = (
-                            new_table_list[i]["magpsf"].data + delta_m_list[i]
+            if new_table is not None:
+                # Add k correction
+                if self.k_corr:
+                    delta_m_list, delta_f_list = self.get_k_correction(table, sim_z)
+                    if delta_m_list != None:
+                        new_table["magpsf"] = (
+                            new_table["magpsf"].data + delta_m_list
                         )
-                        new_table_list[i]["flux"] = (
-                            new_table_list[i]["flux"].data + delta_f_list[i]
+                        new_table["flux"] = (
+                            new_table["flux"].data + delta_f_list
                         )
-
-            for new_table in new_table_list:
                 if self.sig_noise_cut:
                     peak_idx = np.argmax(new_table["flux"])
                     sig_noise_df = pd.DataFrame(
@@ -106,9 +105,7 @@ class Noisify(object):
                     count_sn = sig_noise_df[
                         sig_noise_df["SN"] > self.SN_threshold
                     ].count()
-                    if (
-                        new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]
-                    ) > self.SN_threshold:
+                    if (new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]) > self.SN_threshold:
                         if count_sn[0] >= self.n_det_threshold:
                             noisy_lcs.append(new_table)
                             res.append(1)
@@ -120,11 +117,12 @@ class Noisify(object):
                 else:
                     res.append(1)
                     noisy_lcs.append(new_table)
-
+            else:
+               res.append(0) 
             """
             Prevent being stuck with a lightcurve never yielding a noisified one making the snt threshold. If it fails 50 times, we move on
             """
-            print(f"n_iter: {n_iter} / generated: {len(noisy_lcs)}")
+            #print(f"n_iter: {n_iter} / generated: {len(noisy_lcs)}")
             if n_iter == 50:
                 if sum(res[-50:]) == 0:
                     break
@@ -241,13 +239,7 @@ class Noisify(object):
         truez = float(this_lc.meta["bts_z"])
         zp = this_lc["zp"]
 
-        max_z = truez + delta_z
-        z_list = self.rng.power(4, 10000) * max_z
-        z_list = z_list[z_list > truez]
-        noisy_lc_list = []
-        z_list_update = []
-
-        new_z = self.rng.choice(z_list)
+        new_z = self.rng.choice(self.z_valid_list)
 
         delta_m = cosmo.distmod(new_z) - cosmo.distmod(truez)
         flux_new = 10 ** ((25 - mag - delta_m.value) / 2.5)
@@ -288,12 +280,11 @@ class Noisify(object):
                 meta=this_lc.meta,
             )
             new_lc.meta["z"] = new_z
-            noisy_lc_list.append(new_lc)
-            z_list_update.append(new_z)
+            return new_lc, new_z
+        else:
+            return None, None
 
-        return noisy_lc_list, z_list_update
-
-    def get_k_correction(self, lc_table, z_list):
+    def get_k_correction(self, lc_table, z_sim):
         # map source to a template on sncosmo
         config = io.load_config()
         type_template_map_sncosmo = config["sncosmo_templates"]
@@ -323,15 +314,14 @@ class Noisify(object):
         kcorr_mag_list = []
         kcorr_flux_list = []
 
-        for z_sim in z_list:
-            # get the simulation flux and find k-correction mag
-            model["z"] = z_sim
-            bandflux_sim = model.bandflux(lc_table["band"], time=lc_table["jd"])
-            bandflux_sim[bandflux_sim == 0.0] = 1e-10
-            # kcorr_mag_list.append(-2.5 * np.log10(bandflux_obs / bandflux_sim))
-            kcorr_mag = np.nan_to_num(self.flux_to_mag(bandflux_obs / bandflux_sim, 0))
-            kcorr_mag_list.append(kcorr_mag)
-            kcorr_flux_list.append(bandflux_obs - bandflux_sim)
+        # get the simulation flux and find k-correction mag
+        model["z"] = z_sim
+        bandflux_sim = model.bandflux(lc_table["band"], time=lc_table["jd"])
+        bandflux_sim[bandflux_sim == 0.0] = 1e-10
+        # kcorr_mag_list.append(-2.5 * np.log10(bandflux_obs / bandflux_sim))
+        kcorr_mag = np.nan_to_num(self.flux_to_mag(bandflux_obs / bandflux_sim, 0))
+        kcorr_mag_list.append(kcorr_mag)
+        kcorr_flux_list.append(bandflux_obs - bandflux_sim)
 
         return kcorr_mag_list, kcorr_flux_list
 
