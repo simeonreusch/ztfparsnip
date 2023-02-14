@@ -338,7 +338,7 @@ class CreateLightcurves(object):
                             multiplier = self.selection[c]
                             get_validation = False
 
-                        # print(header)
+                        print(header)
                         noisify = Noisify(
                             table=lc,
                             header=header,
@@ -347,7 +347,7 @@ class CreateLightcurves(object):
                             seed=self.seed,
                             phase_lim=self.phase_lim,
                             delta_z=delta_z,
-                            sig_noise_cut = sig_noise_cut,
+                            sig_noise_cut=sig_noise_cut,
                             SN_threshold=SN_threshold,
                             n_det_threshold=n_det_threshold,
                             output_format=self.output_format,
@@ -392,7 +392,10 @@ class CreateLightcurves(object):
                                 if plot_debug:
                                     for noisy_lc in noisy_lcs:
                                         ax = plot.plot_lc(
-                                            bts_lc, noisy_lc, phase_limit=self.phase_lim, sig_noise_mask=sig_noise_mask, 
+                                            bts_lc,
+                                            noisy_lc,
+                                            phase_limit=self.phase_lim,
+                                            sig_noise_mask=sig_noise_mask,
                                         )
                                         plt.savefig(
                                             self.plot_dir

@@ -98,10 +98,14 @@ class Noisify(object):
                     peak_idx = np.argmax(new_table["flux"])
                     sig_noise_df = pd.DataFrame(
                         data={
-                            "SN": np.abs(np.array(new_table["flux"] / new_table["fluxerr"]))
+                            "SN": np.abs(
+                                np.array(new_table["flux"] / new_table["fluxerr"])
+                            )
                         }
                     )
-                    count_sn = sig_noise_df[sig_noise_df["SN"] > self.SN_threshold].count()
+                    count_sn = sig_noise_df[
+                        sig_noise_df["SN"] > self.SN_threshold
+                    ].count()
                     if (
                         new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]
                     ) > self.SN_threshold:
@@ -119,13 +123,13 @@ class Noisify(object):
             """
             Prevent being stuck with a lightcurve never yielding a noisified one making the snt threshold. If it fails 50 times, we move on
             """
+            print(f"n_iter: {n_iter} / generated: {len(noisy_lcs)}")
             if n_iter == 50:
                 if sum(res[-50:]) == 0:
-                    return None, None
+                    break
 
             n_iter += 1
 
-        # print(noisy_lcs[0])
         if self.output_format == "ztfnuclear":
             all_tables = [table]
             all_tables.extend(noisy_lcs)
