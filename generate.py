@@ -22,4 +22,5 @@ if __name__ == "__main__":
         k_corr=True,
     )
     sample.select()
+    # sample.create(plot_debug=False, start=3356)
     sample.create(plot_debug=False)

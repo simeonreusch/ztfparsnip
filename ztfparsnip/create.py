@@ -73,7 +73,9 @@ class CreateLightcurves(object):
         if isinstance(self.plot_dir, str):
             self.plot_dir = Path(self.plot_dir)
 
-        for p in [self.train_dir, self.plot_dir]:
+        self.validation_dir = self.train_dir.resolve().parent / "validation"
+
+        for p in [self.train_dir, self.plot_dir, self.validation_dir]:
             if not p.exists():
                 os.makedirs(p)
 
@@ -336,6 +338,7 @@ class CreateLightcurves(object):
                             multiplier = self.selection[c]
                             get_validation = False
 
+                        # print(header)
                         noisify = Noisify(
                             table=lc,
                             header=header,
@@ -354,6 +357,12 @@ class CreateLightcurves(object):
                             validation_lc, _ = noisify.noisify_lightcurve()
                             if validation_lc is not None:
                                 final_lightcurves["validation"].append(validation_lc)
+                                if self.output_format == "ztfnuclear":
+                                    io.save_csv_with_header(
+                                        validation_lc,
+                                        savedir=self.validation_dir,
+                                        output_format=self.output_format,
+                                    )
 
                         else:
                             bts_lc, noisy_lcs = noisify.noisify_lightcurve()
@@ -364,6 +373,20 @@ class CreateLightcurves(object):
                                     )
                                 final_lightcurves["bts_orig"].append(bts_lc)
                                 final_lightcurves["bts_noisified"].extend(noisy_lcs)
+
+                                if self.output_format == "ztfnuclear":
+                                    io.save_csv_with_header(
+                                        bts_lc,
+                                        savedir=self.train_dir,
+                                        output_format=self.output_format,
+                                    )
+                                    for noisy_lc in noisy_lcs:
+                                        io.save_csv_with_header(
+                                            noisy_lc,
+                                            savedir=self.train_dir,
+                                            output_format=self.output_format,
+                                        )
+
                                 this_round = 1 + len(noisy_lcs)
                                 generated.update({c: generated[c] + this_round})
                                 if plot_debug:
@@ -417,16 +440,14 @@ class CreateLightcurves(object):
             # Save h5 files
             for k, v in final_lightcurves.items():
                 if len(v) > 0:
+                    if k == "validation":
+                        output_dir = self.validation_dir
+                    else:
+                        output_dir = self.train_dir
                     dataset = lcdata.from_light_curves(v)
                     dataset.write_hdf5(
-                        str(self.train_dir / f"{self.name}_{k}.h5"), overwrite=True
+                        str(output_dir / f"{self.name}_{k}.h5"), overwrite=True
                     )
-
-        elif self.output_format == "ztfnuclear":
-            for lc in final_lightcurves["bts_all"]:
-                io.save_csv_with_header(
-                    lc, savedir=self.train_dir, output_format=self.output_format
-                )
 
         self.logger.info(
             f"Saved to {self.output_format} files in {self.train_dir.resolve()}"
