@@ -198,9 +198,9 @@ def plot_magnitude_dist(lightcurve_dict):
         hue_order = ["Simulated", "Real"],
         kind="kde",
         fill=True,
-        alpha=0.6,
+        alpha=0.8,
     )
-    colours = ["steelblue"] * 8 + ["darkorange"] * 8
+    colours =  ["darkorange"] * 8 + ["steelblue"] * 8
     colours = np.array(colours)
     g.ax_joint.errorbar(
         df_scatter["Bins"][df_scatter["Data type"] == "Real"],
