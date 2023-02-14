@@ -42,6 +42,7 @@ class Noisify(object):
         seed: int = None,
         output_format: str = "parsnip",
         delta_z: float = 0.1,
+        sig_noise_cut: bool = True,
         SN_threshold: float = 5.0,
         n_det_threshold: float = 5,
     ):
@@ -55,6 +56,7 @@ class Noisify(object):
         self.seed = seed
         self.output_format = output_format
         self.delta_z = delta_z
+        self.sig_noise_cut = sig_noise_cut
         self.SN_threshold = SN_threshold
         self.n_det_threshold = n_det_threshold
         self.rng = default_rng(seed=self.seed)
@@ -92,24 +94,27 @@ class Noisify(object):
                         )
 
             for new_table in new_table_list:
-                peak_idx = np.argmax(new_table["flux"])
-                sig_noise_df = pd.DataFrame(
-                    data={
-                        "SN": np.abs(np.array(new_table["flux"] / new_table["fluxerr"]))
-                    }
-                )
-                count_sn = sig_noise_df[sig_noise_df["SN"] > self.SN_threshold].count()
-                if (
-                    new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]
-                ) > self.SN_threshold:
-                    if count_sn[0] >= self.n_det_threshold:
-                        noisy_lcs.append(new_table)
-                        res.append(1)
-                        res_counter += 1
+                if self.sig_noise_cut:
+                    peak_idx = np.argmax(new_table["flux"])
+                    sig_noise_df = pd.DataFrame(
+                        data={
+                            "SN": np.abs(np.array(new_table["flux"] / new_table["fluxerr"]))
+                        }
+                    )
+                    count_sn = sig_noise_df[sig_noise_df["SN"] > self.SN_threshold].count()
+                    if (
+                        new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]
+                    ) > self.SN_threshold:
+                        if count_sn[0] >= self.n_det_threshold:
+                            noisy_lcs.append(new_table)
+                            res.append(1)
+                            res_counter += 1
+                        else:
+                            res.append(0)
                     else:
                         res.append(0)
                 else:
-                    res.append(0)
+                    noisy_lcs.append(new_table)
 
             """
             Prevent being stuck with a lightcurve never yielding a noisified one making the snt threshold. If it fails 50 times, we move on
