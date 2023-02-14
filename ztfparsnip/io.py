@@ -125,6 +125,10 @@ def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
                 for i, line in enumerate(input_file):
                     if len(line) >= 300:
                         break
+                    if line == "\n":
+                        break
+                    if ",ampl_corr" in line:
+                        break
                     key = line.split(",", 2)[0].split("=")[0].lstrip("#")
                     headerkeys.append(key)
                     val = line.split(",", 2)[0].split("=")[1][:-1]
