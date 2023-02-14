@@ -132,7 +132,7 @@ def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
 
                 returndict = {}
                 for i, key in enumerate(headerkeys):
-                    if headervals[i] == "-":
+                    if headervals[i] in ["-", None, "None"]:
                         returnval = None
                     else:
                         returnval = headervals[i]

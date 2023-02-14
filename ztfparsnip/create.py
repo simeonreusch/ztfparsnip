@@ -338,7 +338,6 @@ class CreateLightcurves(object):
                             multiplier = self.selection[c]
                             get_validation = False
 
-                        print(header)
                         noisify = Noisify(
                             table=lc,
                             header=header,
