@@ -179,8 +179,6 @@ def save_csv_with_header(lc, savedir: Path, output_format: str = "ztfnuclear") -
         lc.rename_column("flux", "ampl_corr")
         lc.rename_column("fluxerr", "ampl_err_corr")
 
-        # lc["filterid"] = [band_to_filterid[i] for i in lc["band"].value]
-
     filename = f"{lc_id}.csv"
 
     headerstr = ""

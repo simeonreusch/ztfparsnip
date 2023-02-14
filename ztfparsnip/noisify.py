@@ -143,6 +143,7 @@ class Noisify(object):
                 )
                 del t["zp"]
                 t.rename_column("magzp_orig", "zp")
+                t.rename_column("magzpunc_orig", "magzpunc")
 
         return table, noisy_lcs
 
@@ -159,6 +160,7 @@ class Noisify(object):
         sigmapsf = np.array(self.table["sigmapsf"])
         fid = np.array(self.table["filterid"])
         magzp_orig = np.array(self.table["magzp"])
+        magzpunc_orig = np.array(self.table["magzpunc"])
 
         if self.phase_lim:
             if self.header["bts_class"] in [
@@ -186,6 +188,7 @@ class Noisify(object):
             jd = jd[mask_phase]
             magpsf = magpsf[mask_phase]
             magzp_orig = magzp_orig[mask_phase]
+            magzpunc_orig = magzpunc_orig[mask_phase]
             sigmapsf = sigmapsf[mask_phase]
             fid = fid[mask_phase]
 
@@ -195,6 +198,7 @@ class Noisify(object):
             "sigmapsf": sigmapsf,
             "fid": fid,
             "magzp_orig": magzp_orig,
+            "magzpunc_orig": magzpunc_orig,
         }
 
         phot_tab = Table(phot, names=phot.keys(), meta=self.header)
@@ -230,6 +234,8 @@ class Noisify(object):
             return Table()
         mag = this_lc["magpsf"]
         magzp_orig = this_lc["magzp_orig"]
+        magzpunc_orig = this_lc["magzpunc_orig"]
+        fid = this_lc["fid"]
         flux_old = this_lc["flux"]
         fluxerr_old = this_lc["fluxerr"]
         truez = float(this_lc.meta["bts_z"])
@@ -270,6 +276,8 @@ class Noisify(object):
                 "magpsf": mag_new,
                 "sigmapsf": magerr_new,
                 "magzp_orig": magzp_orig,
+                "magzpunc_orig": magzpunc_orig,
+                "fid": fid,
                 "band": band_new,
                 "zp": zp_new,
                 "zpsys": zpsys_new,

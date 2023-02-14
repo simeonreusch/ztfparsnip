@@ -15,12 +15,12 @@ if __name__ == "__main__":
         output_format="ztfnuclear",
         classkey="simpleclasses",
         weights=weights,
-        train_dir="train",
+        train_dir="train2",
         plot_dir="plot",
         seed=0,
         phase_lim=False,
         k_corr=True,
     )
     sample.select()
-    sample.create(plot_debug=False)
+    sample.create(plot_debug=False, n=10)
     # sample.create(plot_debug=False)
