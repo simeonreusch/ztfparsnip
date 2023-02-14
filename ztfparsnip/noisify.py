@@ -118,6 +118,7 @@ class Noisify(object):
                     else:
                         res.append(0)
                 else:
+                    res.append(1)
                     noisy_lcs.append(new_table)
 
             """

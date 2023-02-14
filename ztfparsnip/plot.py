@@ -198,7 +198,7 @@ def plot_magnitude_dist(lightcurve_dict):
         hue_order = ["Simulated", "Real"],
         kind="kde",
         fill=True,
-        alpha=0.8,
+        alpha=0.7,
     )
     colours =  ["darkorange"] * 8 + ["steelblue"] * 8
     colours = np.array(colours)
