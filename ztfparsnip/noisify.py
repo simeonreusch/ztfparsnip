@@ -130,9 +130,15 @@ class Noisify(object):
             n_iter += 1
 
         if self.output_format == "parsnip":
-            table.keep_columns(["jd", "magpsf", "sigmapsf", "band", "flux", "fluxerr", "zp", "zpsys"])
+            table.keep_columns(["jd", "flux", "fluxerr", "magpsf", "sigmapsf", "band", "zp", "zpsys"])
+            del table.meta["lastobs"]
+            del table.meta["lastdownload"]
+            del table.meta["lastfit"] 
             for new_table in noisy_lcs:
-                new_table.keep_columns(["jd", "magpsf", "sigmapsf", "band", "flux", "fluxerr", "zp", "zpsys"])
+                new_table.keep_columns(["jd", "flux", "fluxerr", "magpsf", "sigmapsf", "band", "zp", "zpsys"])
+                del new_table.meta["lastobs"]
+                del new_table.meta["lastdownload"]
+                del new_table.meta["lastfit"] 
         
         elif self.output_format == "ztfnuclear":
             all_tables = [table]
@@ -268,14 +274,14 @@ class Noisify(object):
         if len(mag_new) > 0:
             phot = {
                 "jd": jd_new,
-                "flux": flux_obs,
-                "fluxerr": fluxerr_obs,
                 "magpsf": mag_new,
                 "sigmapsf": magerr_new,
                 "magzp_orig": magzp_orig,
                 "magzpunc_orig": magzpunc_orig,
                 "fid": fid,
                 "band": band_new,
+                "flux": flux_obs,
+                "fluxerr": fluxerr_obs,
                 "zp": zp_new,
                 "zpsys": zpsys_new,
             }
