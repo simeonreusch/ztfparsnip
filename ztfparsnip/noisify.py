@@ -129,7 +129,12 @@ class Noisify(object):
 
             n_iter += 1
 
-        if self.output_format == "ztfnuclear":
+        if self.output_format == "parsnip":
+            table.keep_columns(["jd", "magpsf", "sigmapsf", "band", "flux", "fluxerr", "zp", "zpsys"])
+            for new_table in noisy_lcs:
+                new_table.keep_columns(["jd", "magpsf", "sigmapsf", "band", "flux", "fluxerr", "zp", "zpsys"])
+        
+        elif self.output_format == "ztfnuclear":
             all_tables = [table]
             all_tables.extend(noisy_lcs)
             for t in all_tables:
