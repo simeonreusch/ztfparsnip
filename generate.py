@@ -12,15 +12,15 @@ weights = {"sn_ia": 9400, "tde": 9400, "sn_other": 9400, "agn": 9400, "star": 94
 
 if __name__ == "__main__":
     sample = CreateLightcurves(
-        output_format="ztfnuclear",
+        output_format="parsnip",
         classkey="simpleclasses",
         weights=weights,
-        train_dir="train2",
+        train_dir="train",
         plot_dir="plot",
         seed=0,
         phase_lim=False,
         k_corr=True,
     )
     sample.select()
-    sample.create(plot_debug=False, n=10)
+    sample.create(plot_debug=False)
     # sample.create(plot_debug=False)
