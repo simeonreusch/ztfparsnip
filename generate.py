@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import logging
+from pathlib import Path
 
 from ztfparsnip.create import CreateLightcurves
 from ztfparsnip import io
@@ -15,11 +16,12 @@ if __name__ == "__main__":
         output_format="parsnip",
         classkey="simpleclasses",
         weights=weights,
-        train_dir="train",
-        plot_dir="plot",
+        train_dir=Path("train"),
+        plot_dir=Path("plot"),
         seed=0,
         phase_lim=False,
         k_corr=True,
+        validation_fraction=0.1,
     )
     sample.select()
     sample.create(plot_debug=False)

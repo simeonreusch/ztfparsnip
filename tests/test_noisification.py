@@ -14,7 +14,7 @@ class TestNoisification(unittest.TestCase):
     def test_noisification_parsnip(self):
         self.logger.info("\n\n Generating noisified lightcurves\n")
 
-        weights = {"sn_ia": 5, "sn_other": 5, "tde": 5}
+        weights = {"sn_ia": 20, "sn_other": 20, "tde": 20}
 
         sample = CreateLightcurves(
             output_format="parsnip",
@@ -33,7 +33,7 @@ class TestNoisification(unittest.TestCase):
     def test_noisification_csv(self):
         self.logger.info("\n\n Generating noisified lightcurves\n")
 
-        weights = {"sn_ia": 5, "sn_other": 5, "tde": 5}
+        weights = {"sn_ia": 20, "sn_other": 20, "tde": 20}
 
         sample = CreateLightcurves(
             output_format="ztfnuclear",

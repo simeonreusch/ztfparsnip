@@ -268,7 +268,7 @@ def download_sample(test: bool = False):
         nr_files = len([x for x in extracted_dir.glob("*") if x.is_file()])
         if nr_files == 6841 and test:
             subprocess.run(cmd_remove_zip, shell=True)
-        elif nr_files == 3 and test:
+        elif nr_files == 10 and test:
             subprocess.run(cmd_remove_zip, shell=True)
         else:
             raise ValueError(

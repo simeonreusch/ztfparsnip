@@ -27,7 +27,10 @@ def plot_lc(
     sig_noise_mask: bool = True,
     fig_size: tuple = (8, 5),
     plot_iband=False,
+    output_format: str = "parsnip",
 ):
+    assert output_format in ["parsnip", "ztfnuclear"]
+
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=fig_size)
     peakjd = float(bts_table.meta["bts_peak_jd"])
 
@@ -35,9 +38,22 @@ def plot_lc(
         bts_table = bts_table[bts_table["band"] != "ztfi"]
         noisy_table = noisy_table[noisy_table["band"] != "ztfi"]
 
+    if output_format == "parsnip":
+        flux_col = "flux"
+        flux_err_col = "fluxerr"
+        date_col = "jd"
+        peak = peakjd
+    elif output_format == "ztfnuclear":
+        flux_col = "ampl_corr"
+        flux_err_col = "ampl_err_corr"
+        date_col = "obsmjd"
+        peak = peakjd - 2400000.5
+
+    print(peak)
+
     if sig_noise_mask:
-        s_n_noisy = np.abs(np.array(noisy_table["flux"] / noisy_table["fluxerr"]))
-        s_n_orig = np.abs(np.array(bts_table["flux"] / bts_table["fluxerr"]))
+        s_n_noisy = np.abs(np.array(noisy_table[flux_col] / noisy_table[flux_err_col]))
+        s_n_orig = np.abs(np.array(bts_table[flux_col] / bts_table[flux_err_col]))
         mask_noisy = s_n_noisy > 5.0
         mask_orig = s_n_orig > 5.0
         noisy_table = noisy_table[mask_noisy]
@@ -76,7 +92,7 @@ def plot_lc(
             label = f"${band[-1:]}$-band at $z={config[lc_type]['z']:.2f}$"
             _df = df.query("type==@lc_type and band==@band")
             ax.errorbar(
-                x=_df["jd"] - peakjd,
+                x=_df[date_col] - peak,
                 y=_df.magpsf,
                 yerr=_df.sigmapsf,
                 ecolor=config[lc_type]["colors"][band],

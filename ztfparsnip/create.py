@@ -86,7 +86,7 @@ class CreateLightcurves(object):
         """
         if self.lc_dir == io.BTS_LC_BASELINE_DIR:
             nr_files = len([x for x in self.lc_dir.glob("*") if x.is_file()])
-            if (test == False and nr_files < 6841) or (test and nr_files < 3):
+            if (test == False and nr_files < 6841) or (test and nr_files < 10):
                 self.logger.info("Downloading sample")
                 io.download_sample(test=test)
 
@@ -281,22 +281,6 @@ class CreateLightcurves(object):
 
         self.classes_available = classes_available
 
-        # noisification_paramdict = {
-        #     "max_redshift_delta": 0.1,
-        #     "classes": ["tde", "slsn", "baratheon", "snia"],
-        #     "redshift_dist": "cubic",
-        #     "k_scale": 1.25,
-        #     "phase_limit": {"long_lived": [-50, 200], "short_lived": [-30, 50]},
-        #     "no_k_classes": ["tde", "slsn"],
-        #     "sn_cuts": {"n_det": 5, "sn_threshold": 5},
-        #     "k_correction": None,
-        #     "augmentation": {
-        #         "mode": "per_class",
-        #         "multiplier": {"snia": 10, "slsn": 100, "tde": 100, "baratheon": 100},
-        #     },
-        #     "verification_percentage": 0.1,
-        # }
-
     def create(
         self,
         plot_debug: bool = False,
@@ -400,6 +384,7 @@ class CreateLightcurves(object):
                                             noisy_lc,
                                             phase_limit=self.phase_lim,
                                             sig_noise_mask=sig_noise_mask,
+                                            output_format=self.output_format,
                                         )
                                         plt.savefig(
                                             self.plot_dir
