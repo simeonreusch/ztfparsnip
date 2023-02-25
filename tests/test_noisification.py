@@ -56,10 +56,10 @@ class TestNoisification(unittest.TestCase):
         sample.create(plot_debug=True)
 
         for name in ["ZTF18aamvfeb", "ZTF19aapreis", "ZTF20acvmzfv"]:
-            path = Path("validation") / f"{name}.csv"
+            path = sample.validation_dir / f"{name}.csv"
             pd.read_csv(path, comment="#")
 
-        infile_noisified = Path("train") / "ZTF18aavvnzu_3.csv"
+        infile_noisified = sample.train_dir / "ZTF18aavvnzu_3.csv"
         df = pd.read_csv(infile_noisified, comment="#", index_col=0)
         df.sort_values(by=["obsmjd"], inplace=True)
         mags = df.magpsf.values
