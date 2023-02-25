@@ -49,8 +49,6 @@ def plot_lc(
         date_col = "obsmjd"
         peak = peakjd - 2400000.5
 
-    print(peak)
-
     if sig_noise_mask:
         s_n_noisy = np.abs(np.array(noisy_table[flux_col] / noisy_table[flux_err_col]))
         s_n_orig = np.abs(np.array(bts_table[flux_col] / bts_table[flux_err_col]))
