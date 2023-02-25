@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+
+  pull_request:
+
+  schedule:
+    - cron: '0 0 1,15 * *'
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install poetry and coveralls
+        run: >-
+          python -m pip install --upgrade poetry coveralls
+
+      - name: Install dependencies (with all extras)
+        run: |
+          poetry install --all-extras
+
+      - name: Test the code
+        env:
+          ZTFDATA: ./
+        run: |
+          poetry run coverage run -m pytest -v 
+
+      - name: mypy
+        run: poetry run mypy ztfparsnip
+
+      - name: Run Coveralls
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+        if: ${{ success() }}
+        run: coveralls
+
+      - name: Echo tag name
+        run: echo "Tag is ${{ github.ref }}, Tagged is ${{ startsWith(github.ref, 'refs/tags/')}}, Python Check is ${{matrix.python-version == 3.11}},  Deploy is ${{ startsWith(github.ref, 'refs/tags/') && matrix.python-version == 3.11}}"
+
+      # - name: Build and publish
+      #   if: ${{ startsWith(github.ref, 'refs/tags/') && success() && matrix.python-version == 3.11}}
+      #   run: |
+      #     poetry publish -n --build
+      #   env:
+      #     POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
+
+  # dependabot:
+  #   needs: [build]
+  #   runs-on: ubuntu-latest
+  #   if: ${{ github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'}}
+  #   steps:
+  #     - name: Enable auto-merge for Dependabot PRs
+  #       run: gh pr merge --auto --merge "$PR_URL"
+  #       env:
+  #         PR_URL: ${{github.event.pull_request.html_url}}
+  #         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
