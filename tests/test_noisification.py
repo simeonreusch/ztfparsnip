@@ -49,10 +49,11 @@ class TestNoisification(unittest.TestCase):
             seed=100,
             phase_lim=True,
             k_corr=True,
+            plot_magdist=True,
             test=True,
         )
         sample.select()
-        sample.create(plot_debug=False)
+        sample.create(plot_debug=True)
 
         for name in ["ZTF18aamvfeb", "ZTF19aapreis", "ZTF20acvmzfv"]:
             path = Path("validation") / f"{name}.csv"

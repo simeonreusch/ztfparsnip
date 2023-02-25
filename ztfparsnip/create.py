@@ -291,6 +291,7 @@ class CreateLightcurves(object):
         SN_threshold: float = 5.0,
         n_det_threshold: float = 5.0,
         n: int | None = None,
+        plot_iband: bool = False,
     ):
         """
         Create noisified lightcurves from the sample
@@ -385,6 +386,7 @@ class CreateLightcurves(object):
                                             phase_limit=self.phase_lim,
                                             sig_noise_mask=sig_noise_mask,
                                             output_format=self.output_format,
+                                            plot_iband=plot_iband,
                                         )
                                         plt.savefig(
                                             self.plot_dir
