@@ -1,4 +1,5 @@
 # ztfparsnip
+[![PyPI version](https://badge.fury.io/py/ztfparsnip.svg)](https://badge.fury.io/py/ztfparsnip)
 [![CI](https://github.com/simeonreusch/ztfparsnip/actions/workflows/ci.yaml/badge.svg)](https://github.com/simeonreusch/ztfparsnip/actions/workflows/ci.yaml)
 [![Coverage Status](https://coveralls.io/repos/github/simeonreusch/ztfparsnip/badge.svg?branch=main)](https://coveralls.io/github/simeonreusch/ztfparsnip?branch=main)
 
