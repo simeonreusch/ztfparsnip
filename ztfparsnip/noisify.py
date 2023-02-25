@@ -10,11 +10,11 @@ import numpy as np
 from numpy.random import default_rng
 import numpy.ma as ma
 import pandas as pd
-import sncosmo
-import lcdata
+import sncosmo  # type:ignore
+import lcdata  # type:ignore
 
-from astropy.table import Table
-from astropy.cosmology import Planck18 as cosmo
+from astropy.table import Table  # type:ignore
+from astropy.cosmology import Planck18 as cosmo  # type:ignore
 from copy import copy
 
 from ztfparsnip import io
@@ -39,7 +39,7 @@ class Noisify(object):
         remove_poor_conditions: bool = True,
         phase_lim: bool = True,
         k_corr: bool = True,
-        seed: int = None,
+        seed: int | None = None,
         output_format: str = "parsnip",
         delta_z: float = 0.1,
         sig_noise_cut: bool = True,
@@ -60,8 +60,10 @@ class Noisify(object):
         self.SN_threshold = SN_threshold
         self.n_det_threshold = n_det_threshold
         self.rng = default_rng(seed=self.seed)
-        self.z_list = (self.rng.power(4, 10000) * (float(self.header['bts_z']) + self.delta_z))
-        self.z_valid_list = self.z_list[self.z_list > float(self.header['bts_z'])]
+        self.z_list = self.rng.power(4, 10000) * (
+            float(self.header["bts_z"]) + self.delta_z
+        )
+        self.z_valid_list = self.z_list[self.z_list > float(self.header["bts_z"])]
 
     def noisify_lightcurve(self):
         """
@@ -87,12 +89,8 @@ class Noisify(object):
                 if self.k_corr:
                     delta_m, delta_f = self.get_k_correction(table, sim_z)
                     if delta_m is not None:
-                        new_table["magpsf"] = (
-                            new_table["magpsf"].data + delta_m
-                        )
-                        new_table["flux"] = (
-                            new_table["flux"].data + delta_f
-                        )
+                        new_table["magpsf"] = new_table["magpsf"].data + delta_m
+                        new_table["flux"] = new_table["flux"].data + delta_f
                 if self.sig_noise_cut:
                     peak_idx = np.argmax(new_table["flux"])
                     sig_noise_df = pd.DataFrame(
@@ -105,7 +103,9 @@ class Noisify(object):
                     count_sn = sig_noise_df[
                         sig_noise_df["SN"] > self.SN_threshold
                     ].count()
-                    if (new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]) > self.SN_threshold:
+                    if (
+                        new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]
+                    ) > self.SN_threshold:
                         if count_sn[0] >= self.n_det_threshold:
                             noisy_lcs.append(new_table)
                             res.append(1)
@@ -118,11 +118,11 @@ class Noisify(object):
                     res.append(1)
                     noisy_lcs.append(new_table)
             else:
-               res.append(0) 
+                res.append(0)
             """
             Prevent being stuck with a lightcurve never yielding a noisified one making the snt threshold. If it fails 50 times, we move on
             """
-            #print(f"n_iter: {n_iter} / generated: {len(noisy_lcs)}")
+            # print(f"n_iter: {n_iter} / generated: {len(noisy_lcs)}")
             if n_iter == 50:
                 if sum(res[-50:]) == 0:
                     break
@@ -130,16 +130,29 @@ class Noisify(object):
             n_iter += 1
 
         if self.output_format == "parsnip":
-            table.keep_columns(["jd", "flux", "fluxerr", "magpsf", "sigmapsf", "band", "zp", "zpsys"])
+            table.keep_columns(
+                ["jd", "flux", "fluxerr", "magpsf", "sigmapsf", "band", "zp", "zpsys"]
+            )
             del table.meta["lastobs"]
             del table.meta["lastdownload"]
-            del table.meta["lastfit"] 
+            del table.meta["lastfit"]
             for new_table in noisy_lcs:
-                new_table.keep_columns(["jd", "flux", "fluxerr", "magpsf", "sigmapsf", "band", "zp", "zpsys"])
+                new_table.keep_columns(
+                    [
+                        "jd",
+                        "flux",
+                        "fluxerr",
+                        "magpsf",
+                        "sigmapsf",
+                        "band",
+                        "zp",
+                        "zpsys",
+                    ]
+                )
                 del new_table.meta["lastobs"]
                 del new_table.meta["lastdownload"]
-                del new_table.meta["lastfit"] 
-        
+                del new_table.meta["lastfit"]
+
         elif self.output_format == "ztfnuclear":
             all_tables = [table]
             all_tables.extend(noisy_lcs)

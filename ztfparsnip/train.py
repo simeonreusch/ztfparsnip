@@ -59,8 +59,11 @@ class Train:
             f"There are {n_parent_id} parent objects. From these, {len(self.meta)} lightcurves have been created."
         )
 
-    def run(self, threads: int = 10, outfile: str | None = None):
+    def run(self, threads: int = 10, outfile: str | Path | None = None):
         """Run the actual train command"""
+        if outfile is not None:
+            outfile = Path(outfile)
+
         if outfile is None:
             model_dir = Path("models").resolve()
             if not model_dir.exists():
@@ -157,7 +160,7 @@ class Train:
 
     def split_train_test(
         self, dataset: lcdata.dataset.Dataset, ratio=0.1
-    ) -> Tuple[lcdata.dataset.Dataset]:
+    ) -> Tuple[lcdata.dataset.Dataset, lcdata.dataset.Dataset]:
         """
         Split train and test set.
         Default ratio 0.1 (90% training, 10% testing)

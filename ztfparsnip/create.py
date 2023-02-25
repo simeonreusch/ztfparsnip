@@ -14,9 +14,9 @@ from tqdm import tqdm
 from ztfparsnip import io
 from ztfparsnip.noisify import Noisify
 from ztfparsnip import plot
-import lcdata
+import lcdata  # type: ignore
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type:ignore
 
 
 class CreateLightcurves(object):
@@ -26,7 +26,7 @@ class CreateLightcurves(object):
     def __init__(
         self,
         classkey: str | None = None,
-        weights: None | dict[Any] = None,
+        weights: None | dict[str, Any] = None,
         validation_fraction: float = 0.1,
         k_corr: bool = True,
         seed: int | None = None,
@@ -310,9 +310,13 @@ class CreateLightcurves(object):
         """
         Create noisified lightcurves from the sample
         """
-        failed = {"no_z": [], "no_class": [], "no_lc_after_cuts": []}
+        failed: dict[str, list] = {"no_z": [], "no_class": [], "no_lc_after_cuts": []}
 
-        final_lightcurves = {"validation": [], "bts_orig": [], "bts_noisified": []}
+        final_lightcurves: dict[str, list] = {
+            "validation": [],
+            "bts_orig": [],
+            "bts_noisified": [],
+        }
 
         self.param_info.update(
             {

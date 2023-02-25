@@ -4,10 +4,10 @@
 
 import os
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type:ignore
 import matplotlib as mpl
 import pandas as pd
-import seaborn as sns
+import seaborn as sns  # type:ignore
 
 plt.rc("font", family="serif", size=10)
 plt.rc("xtick", labelsize=10)
@@ -101,7 +101,6 @@ def plot_lc(
 
 
 def plot_magnitude_dist(lightcurve_dict):
-
     all_old_mag = []
     all_old_mag_err = []
     all_new_mag = []
@@ -138,7 +137,11 @@ def plot_magnitude_dist(lightcurve_dict):
     df = pd.DataFrame(data=dat)
 
     # Make cuts
-    df2 = df[(df['Magnitude'] < 22.) & (df['Magnitude error'] < 1.) & (df['Magnitude'] > 17.)]
+    df2 = df[
+        (df["Magnitude"] < 22.0)
+        & (df["Magnitude error"] < 1.0)
+        & (df["Magnitude"] > 17.0)
+    ]
 
     # Make binned scatter points
     # sort on mag
@@ -195,12 +198,12 @@ def plot_magnitude_dist(lightcurve_dict):
         x="Magnitude",
         y="Magnitude error",
         hue="Data type",
-        hue_order = ["Simulated", "Real"],
+        hue_order=["Simulated", "Real"],
         kind="kde",
         fill=True,
         alpha=0.7,
     )
-    colours =  ["darkorange"] * 8 + ["steelblue"] * 8
+    colours = ["darkorange"] * 8 + ["steelblue"] * 8
     colours = np.array(colours)
     g.ax_joint.errorbar(
         df_scatter["Bins"][df_scatter["Data type"] == "Real"],

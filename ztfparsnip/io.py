@@ -12,7 +12,7 @@ from typing import List
 
 import pandas as pd
 import numpy as np
-from astropy.time import Time
+from astropy.time import Time  # type: ignore
 
 logger = logging.getLogger(__name__)
 alphabet = string.ascii_lowercase + string.digits
@@ -74,15 +74,16 @@ def add_mag(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def get_lightcurve(ztfid: str, lc_dir: str | None = None):
+def get_lightcurve(ztfid: str, lc_dir: Path | None = None):
     if is_valid_ztfid(ztfid):
         if lc_dir is None:
             lc_dir = BTS_LC_BASELINE_DIR
     lc = get_ztfid_dataframe(ztfid=ztfid, lc_dir=lc_dir)
     header = get_ztfid_header(ztfid=ztfid, lc_dir=lc_dir)
 
-    if header.get("bts_z") == "-" or header.get("bts_z") is None:
-        return None, header
+    if header is not None:
+        if header.get("bts_z") in ["-", None]:
+            return None, header
 
     return lc, header
 
@@ -108,7 +109,7 @@ def get_ztfid_dataframe(ztfid: str, lc_dir: Path | None = None) -> pd.DataFrame 
         raise ValueError(f"{ztfid} is not a valid ZTF ID")
 
 
-def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
+def get_ztfid_header(ztfid: str, lc_dir: Path | None = None) -> dict | None:
     """
     Returns the metadata contained in the csvs as dictionary
     """
@@ -137,12 +138,12 @@ def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
                 returndict = {}
                 for i, key in enumerate(headerkeys):
                     if headervals[i] in ["-", None, "None"]:
-                        returnval = None
+                        returnval = "-"
                     else:
                         returnval = headervals[i]
                     returndict.update({key: returnval})
 
-                returndict["ztfid"] = returndict.get("name")
+                returndict["ztfid"] = returndict["name"]
 
                 return returndict
 
@@ -153,7 +154,7 @@ def get_ztfid_header(ztfid: str, lc_dir: str | None = None) -> dict | None:
         raise ValueError(f"{ztfid} is not a valid ZTF ID")
 
 
-def save_csv_with_header(lc, savedir: Path, output_format: str = "ztfnuclear") -> str:
+def save_csv_with_header(lc, savedir: Path, output_format: str = "ztfnuclear"):
     """
     Generate a string of the header from a dict, meant to be written to a csv file. Save the lightcurve with the header info as csv
     """
@@ -206,7 +207,7 @@ def short_id():
     return "".join(random.choices(alphabet, k=5))
 
 
-def get_all_ztfids(lc_dir: str | None = None) -> List[str]:
+def get_all_ztfids(lc_dir: Path | None = None) -> List[str]:
     """
     Checks the lightcurve folder and gets all ztfids
     """
