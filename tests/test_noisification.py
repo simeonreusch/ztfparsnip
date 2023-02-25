@@ -1,4 +1,4 @@
-import logging
+import logging, os
 import unittest
 
 from pathlib import Path
@@ -54,6 +54,8 @@ class TestNoisification(unittest.TestCase):
         )
         sample.select()
         sample.create(plot_debug=True)
+
+        print(os.listdir(sample.validation_dir))
 
         for name in ["ZTF18aamvfeb", "ZTF19aapreis", "ZTF20acvmzfv"]:
             path = sample.validation_dir / f"{name}.csv"
