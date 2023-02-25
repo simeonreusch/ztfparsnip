@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ztfparsnip"
-version = "0.1.0"
+version = "0.2.0"
 description = "Generate noisified lightcurves based on the BTS sample and retrain Parsnip with these."
 authors = ["Simeon Reusch <simeon.reusch@desy.de>", "Alice Townsend <alice.townsend@hu-berlin.de>"]
 readme = "README.md"
