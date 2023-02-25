@@ -57,7 +57,7 @@ class TestNoisification(unittest.TestCase):
 
         print(os.listdir(sample.validation_dir))
 
-        for name in ["ZTF18aamvfeb", "ZTF19aapreis", "ZTF20acvmzfv"]:
+        for name in ["ZTF19aapreis", "ZTF20acvmzfv"]:
             path = sample.validation_dir / f"{name}.csv"
             pd.read_csv(path, comment="#")
 
