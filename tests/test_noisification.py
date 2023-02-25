@@ -25,6 +25,7 @@ class TestQuery(unittest.TestCase):
             seed=100,
             phase_lim=True,
             k_corr=True,
+            test=True,
         )
         sample.select()
         sample.create(plot_debug=True)

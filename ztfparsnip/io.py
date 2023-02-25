@@ -25,9 +25,12 @@ if ztfdir := os.getenv("ZTFDATA"):
     DOWNLOAD_URL_SAMPLE = Path(
         "https://syncandshare.desy.de/index.php/s/cQHcnXmYDzRGyqG/download"
     )
+    DOWNLOAD_URL_SAMPLE_TEST = Path(
+        "https://syncandshare.desy.de/index.php/s/bnGQYb9goiHi6bH/download"
+    )
 
     for d in [BASE_DIR, BTS_LC_BASELINE_DIR, TRAIN_DATA, PLOT_DIR]:
-        if not os.path.exists(d):
+        if not d.is_dir():
             os.makedirs(d)
 
     BTS_HEADERS = BTS_LC_BASELINE_DIR / "headers.json"
@@ -239,12 +242,15 @@ def load_config(config_path: Path | None = None) -> dict:
     return config
 
 
-def download_sample():
+def download_sample(test: bool = False):
     """
     Download the BTS + TDE lightcurves from the DESY Nextcloud
     """
     if ZTFDATA := os.getenv("ZTFDATA"):
-        cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE}"
+        if test:
+            cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE_TEST}"
+        else:
+            cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE}"
         cmd_extract = (
             f"unzip {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip -d {ZTFDATA}/ztfparsnip"
         )
@@ -260,7 +266,9 @@ def download_sample():
 
         # Validate
         nr_files = len([x for x in extracted_dir.glob("*") if x.is_file()])
-        if nr_files == 6841:
+        if nr_files == 6841 and test:
+            subprocess.run(cmd_remove_zip, shell=True)
+        elif nr_files == 3 and test:
             subprocess.run(cmd_remove_zip, shell=True)
         else:
             raise ValueError(
@@ -269,5 +277,5 @@ def download_sample():
 
     else:
         raise ValueError(
-            "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See github.com/mickaelrigault/ztfquery"
+            "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See https://github.com/mickaelrigault/ztfquery"
         )

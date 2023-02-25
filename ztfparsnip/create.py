@@ -38,6 +38,7 @@ class CreateLightcurves(object):
         phase_lim: bool = True,
         train_dir: Path = io.TRAIN_DATA,
         plot_dir: Path = io.PLOT_DIR,
+        test: bool = False,
     ):
         super(CreateLightcurves, self).__init__()
         self.logger = logging.getLogger(__name__)
@@ -85,9 +86,9 @@ class CreateLightcurves(object):
         """
         if self.lc_dir == io.BTS_LC_BASELINE_DIR:
             nr_files = len([x for x in self.lc_dir.glob("*") if x.is_file()])
-            if nr_files < 6841:
+            if (test == False and nr_files < 6841) or (test and nr_files < 3):
                 self.logger.info("Downloading sample")
-                io.download_sample()
+                io.download_sample(test=test)
 
         self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir)
         self.config = io.load_config()
