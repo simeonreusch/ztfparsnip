@@ -38,7 +38,7 @@ jobs:
         env:
           ZTFDATA: ./
         run: |
-          poetry run coverage run -m pytest -v --capture=tee-sys
+          poetry run coverage run -m pytest -v
 
       - name: mypy
         run: poetry run mypy ztfparsnip

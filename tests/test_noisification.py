@@ -55,8 +55,6 @@ class TestNoisification(unittest.TestCase):
         sample.select()
         sample.create(plot_debug=True)
 
-        print(os.listdir(sample.validation_dir))
-
         for name in ["ZTF19aapreis", "ZTF20acvmzfv"]:
             path = sample.validation_dir / f"{name}.csv"
             pd.read_csv(path, comment="#")
@@ -145,4 +143,4 @@ class TestNoisification(unittest.TestCase):
             22.04574997,
         ]
 
-        np.testing.assert_almost_equal(df.magpsf.values, reference_mags, decimal=3)
+        np.testing.assert_almost_equal(df.magpsf.values, reference_mags, decimal=5)
