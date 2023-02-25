@@ -1,5 +1,6 @@
 # ztfparsnip
 [![CI](https://github.com/simeonreusch/ztfparsnip/actions/workflows/ci.yaml/badge.svg)](https://github.com/simeonreusch/ztfparsnip/actions/workflows/ci.yaml)
+[![Coverage Status](https://coveralls.io/repos/github/simeonreusch/ztfparsnip/badge.svg?branch=main)](https://coveralls.io/github/simeonreusch/ztfparsnip?branch=main)
 
 Retrain [Parsnip](https://github.com/LSSTDESC/parsnip) for ZTF. This is achieved by using [fpbot](https://github.com/simeonreusch/fpbot) forced photometry lightcurves of the [Bright Transient Survey](https://sites.astro.caltech.edu/ztf/bts/bts.php). These are augmented (redshifted, noisifed and - when possible - K-corrected).
 
