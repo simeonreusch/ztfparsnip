@@ -1,10 +1,10 @@
-import logging, os
+import logging
+import os
 import unittest
-
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from ztfparsnip.create import CreateLightcurves
 

@@ -2,21 +2,21 @@
 # Author: Lightcurve creation code by Alice Townsend (alice.townsend@hu-berlin.de)
 # License: BSD-3-Clause
 
-import os, numpy, logging, json, math
-
+import json
+import logging
+import math
+import os
 from pathlib import Path
-
 from typing import Any
-from numpy.random import default_rng
 
+import lcdata  # type: ignore
+import matplotlib.pyplot as plt  # type:ignore
+import numpy
+from numpy.random import default_rng
 from tqdm import tqdm
 
-from ztfparsnip import io
+from ztfparsnip import io, plot
 from ztfparsnip.noisify import Noisify
-from ztfparsnip import plot
-import lcdata  # type: ignore
-
-import matplotlib.pyplot as plt  # type:ignore
 
 
 class CreateLightcurves(object):

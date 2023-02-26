@@ -3,9 +3,10 @@
 # License: BSD-3-Clause
 
 import os
-import numpy as np
-import matplotlib.pyplot as plt  # type:ignore
+
 import matplotlib as mpl
+import matplotlib.pyplot as plt  # type:ignore
+import numpy as np
 import pandas as pd
 import seaborn as sns  # type:ignore
 

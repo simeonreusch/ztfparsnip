@@ -2,16 +2,18 @@
 # Author: Simeon Reusch (simeon.reusch@desy.de)
 # License: BSD-3-Clause
 
-import os, re, logging, yaml, random, string, subprocess
-
-from typing import Dict, Any, Tuple
-
+import logging
+import os
+import random
+import re
+import string
+import subprocess
 from pathlib import Path
+from typing import Any, Dict, List, Tuple
 
-from typing import List
-
-import pandas as pd
 import numpy as np
+import pandas as pd
+import yaml
 from astropy.time import Time  # type: ignore
 
 logger = logging.getLogger(__name__)

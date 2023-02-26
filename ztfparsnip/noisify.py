@@ -2,20 +2,22 @@
 # Author: Alice Townsend (alice.townsend@hu-berlin.de)
 # License: BSD-3-Clause
 
-import os, numpy, logging, re, os, glob
-
+import glob
+import logging
+import os
+import re
+from copy import copy
 from pathlib import Path
 
+import lcdata  # type:ignore
+import numpy
 import numpy as np
-from numpy.random import default_rng
 import numpy.ma as ma
 import pandas as pd
 import sncosmo  # type:ignore
-import lcdata  # type:ignore
-
-from astropy.table import Table  # type:ignore
 from astropy.cosmology import Planck18 as cosmo  # type:ignore
-from copy import copy
+from astropy.table import Table  # type:ignore
+from numpy.random import default_rng
 
 from ztfparsnip import io
 

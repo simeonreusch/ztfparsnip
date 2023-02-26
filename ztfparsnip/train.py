@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 
-import logging, os, subprocess, time, warnings
+import logging
+import os
+import subprocess
+import time
+import warnings
+from pathlib import Path
 from typing import Tuple
 
-from pathlib import Path
-
 import lcdata  # type: ignore
-import pandas as pd  # type: ignore
 import numpy as np
-from numpy.random import default_rng
+import pandas as pd  # type: ignore
 import parsnip  # type: ignore
+from numpy.random import default_rng
 
 
 class Train:
