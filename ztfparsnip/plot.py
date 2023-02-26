@@ -4,10 +4,11 @@
 
 import os
 
-import matplotlib as mpl
+import matplotlib as mpl  # type:ignore
 import matplotlib.pyplot as plt  # type:ignore
 import numpy as np
-import pandas as pd
+import pandas as pd  # type:ignore
+
 import seaborn as sns  # type:ignore
 
 plt.rc("font", family="serif", size=10)
