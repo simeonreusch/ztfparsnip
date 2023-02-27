@@ -103,7 +103,9 @@ class CreateLightcurves(object):
         self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir, test=self.test)
 
         classkeys_available = [
-            key for key in list(self.config.keys()) if key != "sncosmo_templates"
+            key
+            for key in list(self.config.keys())
+            if key not in ["sncosmo_templates", "test_lightcurves"]
         ]
 
         if classkey is None:
@@ -310,7 +312,7 @@ class CreateLightcurves(object):
         failed: dict[str, list] = {"no_z": [], "no_class": [], "no_lc_after_cuts": []}
 
         final_lightcurves: dict[str, list] = {
-            "validation": [],
+            "bts_validation": [],
             "bts_orig": [],
             "bts_noisified": [],
         }
@@ -357,7 +359,9 @@ class CreateLightcurves(object):
                         if get_validation:
                             validation_lc, _ = noisify.noisify_lightcurve()
                             if validation_lc is not None:
-                                final_lightcurves["validation"].append(validation_lc)
+                                final_lightcurves["bts_validation"].append(
+                                    validation_lc
+                                )
                                 if self.output_format == "ztfnuclear":
                                     io.save_csv_with_header(
                                         validation_lc,
@@ -435,7 +439,7 @@ class CreateLightcurves(object):
             f"Generated {len(final_lightcurves['bts_noisified'])} noisified additional lightcurves from {len(final_lightcurves['bts_orig'])} original lightcurves"
         )
         self.logger.info(
-            f"Kept {len(final_lightcurves['validation'])} lightcurves for validation"
+            f"Kept {len(final_lightcurves['bts_validation'])} lightcurves for validation"
         )
 
         self.logger.info(f"Created per class: {generated}")
@@ -446,7 +450,7 @@ class CreateLightcurves(object):
             # Save h5 files
             for k, v in final_lightcurves.items():
                 if len(v) > 0:
-                    if k == "validation":
+                    if k == "bts_validation":
                         output_dir = self.validation_dir
                     else:
                         output_dir = self.train_dir

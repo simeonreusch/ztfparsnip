@@ -4,6 +4,7 @@ simpleclasses:
     - QSO
     - AGN?
     - NLSy1?
+    - NLSy1
     - NLSy
     - CLAGN
     - AGN?
@@ -97,11 +98,19 @@ simpleclasses:
 
   tde:
     - Tidal Disruption Event
+    - TidalDisruptionEvent
     - TDE
 
   unclass:
-    - -
+    - "-"
     - None
+
+  train_on:
+    - tde
+    - sn_other
+    - sn_ia
+    - agn
+    - star
 
 upperclasses:
   agn:
@@ -210,7 +219,7 @@ upperclasses:
     - TDE
 
   unclass:
-    - -
+    - "-"
     - None
 
 sncosmo_templates:

@@ -13,16 +13,42 @@ import numpy as np
 import pandas as pd  # type: ignore
 import parsnip  # type: ignore
 from numpy.random import default_rng
+from ztfparsnip import io
 
 
 class Train:
-    def __init__(self, path: Path | str, seed=None):
+    def __init__(
+        self,
+        path: Path | str = Path("train"),
+        classkey: str | None = None,
+        seed=None,
+        name: str = "train",
+    ):
         if isinstance(path, str):
             path = Path(path)
-        self.training_path = path
+        self.name = name
         self.logger = logging.getLogger(__name__)
         self.rng = default_rng(seed=seed)
-        print(self.training_path)
+
+        self.config = io.load_config()
+
+        classkeys_available = [
+            key
+            for key in list(self.config.keys())
+            if key not in ["sncosmo_templates", "test_lightcurves"]
+        ]
+
+        if classkey is None:
+            raise ValueError(
+                f"Specify a set of classifications to choose from the config. Available: {classkeys_available}"
+            )
+        else:
+            self.classkey = classkey
+
+        if path.is_dir():
+            self.training_path = path / f"{self.name}_bts_all.h5"
+        else:
+            self.training_path = path
 
         meta_df = lcdata.read_hdf5(self.training_path, in_memory=False).meta.to_pandas()
 
@@ -118,10 +144,16 @@ class Train:
         args["overwrite"] = True
         args["max_epochs"] = 1000
 
+        label_map, valid_classes = self.get_classes()
+
         dataset = parsnip.load_datasets(
             [str(self.training_path.resolve())],
             require_redshift=True,
+            label_map=label_map,
+            valid_classes=valid_classes,
+            kind="ztf",
         )
+
         bands = parsnip.get_bands(dataset)
 
         model = parsnip.ParsnipModel(
@@ -161,6 +193,31 @@ class Train:
         self.logger.info(
             f"outfile={outfile} epoch={model.epoch} elapsed_time={elapsed_time:.2f} train_score={train_score:.4f} test_score={test_score:.4f}"
         )
+
+    def get_classes(self):
+        """
+        Convert classification mapping dictionary to something
+        parsnip can parse (basically invert keys and values)
+        """
+        label_map = self.config[self.classkey]
+        label_map_parsnip = {}
+
+        train_on = label_map.get("train_on")
+        if train_on is not None:
+            valid_classes = label_map.pop("train_on")
+
+        else:
+            valid_classes = []
+        for k, v in label_map.items():
+            for entry in v:
+                label_map_parsnip.update({entry: k})
+                if "sn" in k:
+                    label_map_parsnip.update({f"SN{entry}": k})
+                    label_map_parsnip.update({f"SN {entry}": k})
+            if train_on is None:
+                valid_classes.append(k)
+
+        return label_map_parsnip, valid_classes
 
     def split_train_test(
         self, dataset: lcdata.dataset.Dataset, ratio=0.1
