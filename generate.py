@@ -25,3 +25,5 @@ if __name__ == "__main__":
     )
     sample.select()
     sample.create(plot_debug=False)
+    train = Train(classkey="simpleclasses", seed=0)
+    train.run()
