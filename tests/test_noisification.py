@@ -5,7 +5,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 from ztfparsnip.create import CreateLightcurves
 
 logging.getLogger("ztfparsnip.create").setLevel(logging.DEBUG)

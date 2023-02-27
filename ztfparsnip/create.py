@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt  # type:ignore
 import numpy
 from numpy.random import default_rng
 from tqdm import tqdm
-
 from ztfparsnip import io, plot
 from ztfparsnip.noisify import Noisify
 
@@ -54,6 +53,7 @@ class CreateLightcurves(object):
         self.train_dir = train_dir
         self.plot_dir = plot_dir
         self.lc_dir = bts_baseline_dir
+        self.test = test
 
         self.rng = default_rng(seed=self.seed)
 
@@ -80,18 +80,28 @@ class CreateLightcurves(object):
             if not p.exists():
                 os.makedirs(p)
 
+        self.config = io.load_config()
+
         """
         if we are in the default sample dir, check if files are there,
         check if files are there an download if not
         """
         if self.lc_dir == io.BTS_LC_BASELINE_DIR:
-            nr_files = len([x for x in self.lc_dir.glob("*") if x.is_file()])
-            if (test == False and nr_files < 6841) or (test and nr_files < 10):
+            if not self.test:
+                nr_files = len([x for x in self.lc_dir.glob("*") if x.is_file()])
+            else:
+                nr_files = 0
+                for x in self.lc_dir.glob("*"):
+                    if f"{x.name}".split("_")[0] in self.config["test_lightcurves"]:
+                        nr_files += 1
+            if (self.test == False and nr_files < 6841) or (
+                self.test and nr_files < 10
+            ):
                 self.logger.info("Downloading sample")
-                io.download_sample(test=test)
+                io.download_sample()
 
-        self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir)
-        self.config = io.load_config()
+        self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir, test=self.test)
+
         classkeys_available = [
             key for key in list(self.config.keys()) if key != "sncosmo_templates"
         ]
@@ -185,7 +195,7 @@ class CreateLightcurves(object):
                 headers_raw = json.load(f)
 
         for k, v in headers_raw.items():
-            if (z := v.get("bts_z")) != "-" and z is not None:
+            if k in self.ztfids and (z := v.get("bts_z")) != "-" and z is not None:
                 self.headers.update({k: v})
 
     def select(

@@ -246,3 +246,15 @@ sncosmo_templates:
   SN IIn: nugent-sn2n
   SN IIn?: nugent-sn2n
   SN IIP: nugent-sn2p
+
+test_lightcurves:
+  - ZTF18aamvfeb
+  - ZTF18aavvnzu
+  - ZTF18aawgrxz
+  - ZTF19aapreis
+  - ZTF20actpavu
+  - ZTF20acueziy
+  - ZTF20acuobve
+  - ZTF20acvkjrm
+  - ZTF20acvmzfv
+  - ZTF20acwjhpo

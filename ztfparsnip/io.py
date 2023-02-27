@@ -212,7 +212,7 @@ def short_id():
     return "".join(random.choices(alphabet, k=5))
 
 
-def get_all_ztfids(lc_dir: Path | None = None) -> List[str]:
+def get_all_ztfids(lc_dir: Path | None = None, test: bool = False) -> List[str]:
     """
     Checks the lightcurve folder and gets all ztfids
     """
@@ -227,6 +227,11 @@ def get_all_ztfids(lc_dir: Path | None = None) -> List[str]:
             else:
                 ztfid = name[:-4]
             ztfids.append(ztfid)
+
+    if test:
+        config = load_config()
+        ztfids = [ztfid for ztfid in ztfids if ztfid in config["test_lightcurves"]]
+
     return ztfids
 
 
