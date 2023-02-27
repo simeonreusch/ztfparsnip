@@ -111,10 +111,13 @@ class Noisify(object):
                     ) > self.SN_threshold:
                         if count_sn[0] >= self.n_det_threshold:
                             # Randomly remove datapoints, retaining (subsampling_rate)% of lc
-                            subsampled_length = int(len(new_table["flux"]) * self.subsampling_rate)
-                            indices_to_keep = self.rng.choice(len(new_table["flux"]), subsampled_length, replace=False)
-                            aug_table = new_table[indices_to_keep]
-                            noisy_lcs.append(aug_table)
+                            if self.subsampling_rate < 1.0:
+                                subsampled_length = int(len(new_table["flux"]) * self.subsampling_rate)
+                                indices_to_keep = self.rng.choice(len(new_table["flux"]), subsampled_length, replace=False)
+                                aug_table = new_table[indices_to_keep]
+                                noisy_lcs.append(aug_table)
+                            else:
+                                noisy_lcs.append(new_table)
                             res.append(1)
                         else:
                             res.append(0)
