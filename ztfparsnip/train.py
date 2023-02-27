@@ -22,6 +22,7 @@ class Train:
         self.training_path = path
         self.logger = logging.getLogger(__name__)
         self.rng = default_rng(seed=seed)
+        print(self.training_path)
 
         meta_df = lcdata.read_hdf5(self.training_path, in_memory=False).meta.to_pandas()
 
@@ -187,20 +188,3 @@ class Train:
         test_dataset = dataset[test_mask]
 
         return train_dataset, test_dataset
-
-
-# noisification_paramdict = {
-#     "max_redshift_delta": 0.1,
-#     "classes": ["tde", "slsn", "baratheon", "snia"],
-#     "redshift_dist": "cubic",
-#     "k_scale": 1.25,
-#     "phase_limit": {"long_lived": [-50, 200], "short_lived": [-30, 50]},
-#     "no_k_classes": ["tde", "slsn"],
-#     "sn_cuts": {"n_det": 5, "sn_threshold": 5},
-#     "k_correction": None,
-#     "augmentation": {
-#         "mode": "per_class",
-#         "multiplier": {"snia": 10, "slsn": 100, "tde": 100, "baratheon": 100},
-#     },
-#     "verification_percentage": 0.1,
-# }

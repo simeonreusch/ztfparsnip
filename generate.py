@@ -21,8 +21,7 @@ if __name__ == "__main__":
         seed=0,
         phase_lim=False,
         k_corr=True,
-        validation_fraction=0.1,
+        validation_fraction=0.3,
     )
     sample.select()
     sample.create(plot_debug=False)
-    # sample.create(plot_debug=False)
