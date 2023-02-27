@@ -98,7 +98,7 @@ class CreateLightcurves(object):
                 self.test and nr_files < 10
             ):
                 self.logger.info("Downloading sample")
-                io.download_sample()
+                io.download_sample(test=test)
 
         self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir, test=self.test)
 
