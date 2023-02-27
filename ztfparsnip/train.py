@@ -156,14 +156,28 @@ class Train:
 
         bands = parsnip.get_bands(dataset)
 
+        import torch
+
+        cuda_available = torch.cuda.is_available()
+
+        if cuda_available:
+            device = "cuda"
+            threads = torch.cuda.device_count()
+        else:
+            device = "cpu"
+            threads = 8
+
+        self.logger.info(f"Device: {device} / threads: {threads}")
+
         model = parsnip.ParsnipModel(
             path=outfile,
             bands=bands,
-            device="cuda",
-            threads=8,
+            device=device,
+            threads=threads,
             settings=args,
             ignore_unknown_settings=True,
         )
+
         dataset = model.preprocess(dataset)
 
         # do own test train validation split here!!!!
