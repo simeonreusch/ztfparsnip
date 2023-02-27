@@ -47,6 +47,7 @@ class Noisify(object):
         sig_noise_cut: bool = True,
         SN_threshold: float = 5.0,
         n_det_threshold: float = 5,
+        subsampling_rate: float = 1.0,
     ):
         super(Noisify, self).__init__()
         self.table = table
@@ -61,6 +62,7 @@ class Noisify(object):
         self.sig_noise_cut = sig_noise_cut
         self.SN_threshold = SN_threshold
         self.n_det_threshold = n_det_threshold
+        self.subsampling_rate = subsampling_rate
         self.rng = default_rng(seed=self.seed)
         self.z_list = self.rng.power(4, 10000) * (
             float(self.header["bts_z"]) + self.delta_z
@@ -80,7 +82,6 @@ class Noisify(object):
 
         # -------- Noisification -------- #
         res = []
-        res_counter = 0
         n_iter = 0
 
         while len(noisy_lcs) < (self.multiplier - 1):
@@ -109,9 +110,12 @@ class Noisify(object):
                         new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]
                     ) > self.SN_threshold:
                         if count_sn[0] >= self.n_det_threshold:
-                            noisy_lcs.append(new_table)
+                            # Randomly remove datapoints, retaining (subsampling_rate)% of lc
+                            subsampled_length = int(len(new_table["flux"]) * self.subsampling_rate)
+                            indices_to_keep = self.rng.choice(len(new_table["flux"]), subsampled_length, replace=False)
+                            aug_table = new_table[indices_to_keep]
+                            noisy_lcs.append(aug_table)
                             res.append(1)
-                            res_counter += 1
                         else:
                             res.append(0)
                     else:
