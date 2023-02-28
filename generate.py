@@ -5,6 +5,7 @@ from pathlib import Path
 
 from ztfparsnip import io
 from ztfparsnip.create import CreateLightcurves
+from ztfparsnip.train import Train
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

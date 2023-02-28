@@ -28,7 +28,11 @@ sample.create(plot_debug=False)
 ```
 
 ### Train Parsnip with the augmented sample
-Run `ztftrain INFILE` where `INFILE` points to a `.h5` object.
+```python
+from ztfparsnip.train import Train
+train = Train(classkey="simpleclasses", seed=None)
+train.run()
+```
 
 ### Evaluate
 Coming soon.
