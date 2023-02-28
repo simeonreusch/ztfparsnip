@@ -364,7 +364,6 @@ class Train:
 
         classifications_validation = classifier.classify(validation_predictions)
 
-        print(classifications_validation)
         parsnip.plot_confusion_matrix(
             validation_predictions, classifications_validation
         )
