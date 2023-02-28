@@ -37,6 +37,7 @@ class CreateLightcurves(object):
         phase_lim: bool = True,
         train_dir: Path = io.TRAIN_DATA,
         plot_dir: Path = io.PLOT_DIR,
+        validation_dir: Path | None | str = None,
         test: bool = False,
     ):
         super(CreateLightcurves, self).__init__()
@@ -74,7 +75,10 @@ class CreateLightcurves(object):
         if isinstance(self.plot_dir, str):
             self.plot_dir = Path(self.plot_dir)
 
-        self.validation_dir = self.train_dir.resolve().parent / "validation"
+        if validation_dir is None:
+            self.validation_dir = self.train_dir.resolve().parent / "validation"
+        else:
+            self.validation_dir = Path(validation_dir)
 
         for p in [self.train_dir, self.plot_dir, self.validation_dir]:
             if not p.exists():
