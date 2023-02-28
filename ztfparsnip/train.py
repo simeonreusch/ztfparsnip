@@ -8,10 +8,12 @@ import warnings
 from pathlib import Path
 from typing import Tuple
 
+import astropy
 import lcdata  # type: ignore
 import numpy as np
 import pandas as pd  # type: ignore
 import parsnip  # type: ignore
+import torch
 from numpy.random import default_rng
 from ztfparsnip import io
 
@@ -21,6 +23,7 @@ class Train:
         self,
         path: Path | str = Path("train"),
         classkey: str | None = None,
+        no_redshift: bool = False,
         seed=None,
         name: str = "train",
     ):
@@ -28,9 +31,19 @@ class Train:
             path = Path(path)
         self.name = name
         self.logger = logging.getLogger(__name__)
+        self.no_redshift = no_redshift
         self.rng = default_rng(seed=seed)
 
         self.config = io.load_config()
+
+        cuda_available = torch.cuda.is_available()
+
+        if cuda_available:
+            self.device = "cuda"
+            self.threads = torch.cuda.device_count()
+        else:
+            self.device = "cpu"
+            self.threads = 8
 
         classkeys_available = [
             key
@@ -148,7 +161,7 @@ class Train:
 
         dataset = parsnip.load_datasets(
             [str(self.training_path.resolve())],
-            require_redshift=True,
+            require_redshift=False,
             label_map=label_map,
             valid_classes=valid_classes,
             kind="ztf",
@@ -156,24 +169,13 @@ class Train:
 
         bands = parsnip.get_bands(dataset)
 
-        import torch
-
-        cuda_available = torch.cuda.is_available()
-
-        if cuda_available:
-            device = "cuda"
-            threads = torch.cuda.device_count()
-        else:
-            device = "cpu"
-            threads = 8
-
-        self.logger.info(f"Device: {device} / threads: {threads}")
+        self.logger.info(f"Device: {self.device} / threads: {self.threads}")
 
         model = parsnip.ParsnipModel(
             path=outfile,
             bands=bands,
-            device=device,
-            threads=threads,
+            device=self.device,
+            threads=self.threads,
             settings=args,
             ignore_unknown_settings=True,
         )
@@ -259,3 +261,110 @@ class Train:
         test_dataset = dataset[test_mask]
 
         return train_dataset, test_dataset
+
+    def classify(
+        self,
+        model_path: Path | str | None = None,
+        predictions_path: Path | str | None = None,
+    ):
+        """
+        Evaluate the trained model with the validation lightcurves
+        """
+        if model_path is not None:
+            model_path = Path(model_path)
+
+        if model_path is None:
+            model_dir = Path("models").resolve()
+            if not model_dir.exists():
+                os.makedirs(model_dir)
+            model_path = model_dir / self.training_path.with_name(
+                self.training_path.stem + "_model.hd5"
+            )
+        if predictions_path is not None:
+            self.predictions_path = Path(predictions_path)
+
+        if predictions_path is None:
+            predictions_dir = Path("predictions").resolve()
+            if not predictions_dir.exists():
+                os.makedirs(predictions_dir)
+            self.predictions_path = predictions_dir / (
+                str(self.training_path.stem) + "_predictions.h5"
+            )
+
+        model = parsnip.load_model(
+            str(model_path),
+            device=self.device,
+            threads=self.threads,
+        )
+        self.logger.info(f"Loaded model. Parameters:\n{model}")
+
+        label_map, valid_classes = self.get_classes()
+
+        if not self.predictions_path.is_file():
+            dataset = parsnip.load_datasets(
+                [str(self.training_path.resolve())],
+                require_redshift=False,
+                label_map=label_map,
+                valid_classes=valid_classes,
+                kind="ztf",
+            )
+
+            # Parse the dataset in chunks. For large datasets, we can't fit them all in memory
+            # at the same time.
+            if isinstance(dataset, lcdata.HDF5Dataset):
+                chunk_size = 1000
+                num_chunks = dataset.count_chunks(chunk_size)
+                chunks = tqdm(
+                    dataset.iterate_chunks(chunk_size),
+                    total=num_chunks,
+                    file=sys.stdout,
+                )
+            else:
+                chunks = [dataset]
+
+            predictions = []
+
+            for chunk in chunks:
+                # Preprocess the light curves
+                chunk = model.preprocess(chunk, verbose=False)
+
+                # Generate the prediction
+                chunk_predictions = model.predict_dataset(chunk)
+                predictions.append(chunk_predictions)
+
+            predictions = astropy.table.vstack(predictions, "exact")
+
+            predictions.write(
+                self.predictions_path,
+                overwrite=True,
+                serialize_meta=True,
+                path="/predictions",
+            )
+
+            self.logger.info(f"Predictions written to {self.predictions_path}")
+
+        else:
+            predictions = astropy.io.misc.hdf5.read_table_hdf5(
+                str(self.predictions_path)
+            )
+
+        classifier = parsnip.Classifier()
+
+        classifier.train(predictions)
+
+        dataset_validation = parsnip.load_datasets(
+            ["validation/train_bts_validation.h5"],
+            require_redshift=False,
+            label_map=label_map,
+            valid_classes=valid_classes,
+            kind="ztf",
+        )
+
+        validation_predictions = model.predict_dataset(dataset_validation)
+
+        classifications_validation = classifier.classify(validation_predictions)
+
+        print(classifications_validation)
+        parsnip.plot_confusion_matrix(
+            validation_predictions, classifications_validation
+        )
