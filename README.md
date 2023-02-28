@@ -13,25 +13,27 @@ The package is maintained by [A. Townsend](https://github.com/aotownsend) (HU Be
 from pathlib import Path
 from ztfparsnip.create import CreateLightcurves
 weights = {"sn_ia": 9400, "tde": 9400, "sn_other": 9400, "agn": 9400, "star": 9400}
-sample = CreateLightcurves(
-        output_format="parsnip",
-        classkey="simpleclasses",
-        weights=weights,
-        train_dir=Path("train"),
-        plot_dir=Path("plot"),
-        seed=None,
-        phase_lim=True,
-        k_corr=True,
-    )
-sample.select()
-sample.create(plot_debug=False)
+if __name__ == "__main__":
+        sample = CreateLightcurves(
+                output_format="parsnip",
+                classkey="simpleclasses",
+                weights=weights,
+                train_dir=Path("train"),
+                plot_dir=Path("plot"),
+                seed=None,
+                phase_lim=True,
+                k_corr=True,
+            )
+        sample.select()
+        sample.create(plot_debug=False)
 ```
 
 ### Train Parsnip with the augmented sample
 ```python
 from ztfparsnip.train import Train
-train = Train(classkey="simpleclasses", seed=None)
-train.run()
+if __name__ == "__main__":
+        train = Train(classkey="simpleclasses", seed=None)
+        train.run()
 ```
 
 ### Evaluate
