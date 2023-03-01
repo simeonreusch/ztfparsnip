@@ -10,7 +10,6 @@ from copy import copy
 from pathlib import Path
 
 import lcdata  # type:ignore
-import numpy
 import numpy as np
 import numpy.ma as ma
 import pandas as pd
@@ -18,8 +17,8 @@ import sncosmo  # type:ignore
 from astropy.cosmology import Planck18 as cosmo  # type:ignore
 from astropy.table import Table  # type:ignore
 from numpy.random import default_rng
-
 from ztfparsnip import io
+
 
 """
 IDEAS FOR FUTURE VERSIONS:
@@ -48,6 +47,7 @@ class Noisify(object):
         SN_threshold: float = 5.0,
         n_det_threshold: float = 5,
         subsampling_rate: float = 1.0,
+        jd_scatter_sigma: float = 0.0,
     ):
         super(Noisify, self).__init__()
         self.table = table
@@ -63,6 +63,7 @@ class Noisify(object):
         self.SN_threshold = SN_threshold
         self.n_det_threshold = n_det_threshold
         self.subsampling_rate = subsampling_rate
+        self.jd_scatter_sigma = jd_scatter_sigma
         self.rng = default_rng(seed=self.seed)
         self.z_list = self.rng.power(4, 10000) * (
             float(self.header["bts_z"]) + self.delta_z
@@ -111,10 +112,24 @@ class Noisify(object):
                     ) > self.SN_threshold:
                         if count_sn[0] >= self.n_det_threshold:
                             # Randomly remove datapoints, retaining (subsampling_rate)% of lc
-                            if self.subsampling_rate < 1.0 and len(new_table["flux"]) > 10:
-                                subsampled_length = int(len(new_table["flux"]) * self.subsampling_rate)
-                                indices_to_keep = self.rng.choice(len(new_table["flux"]), subsampled_length, replace=False)
+                            if (
+                                self.subsampling_rate < 1.0
+                                and len(new_table["flux"]) > 10
+                            ):
+                                subsampled_length = int(
+                                    len(new_table["flux"]) * self.subsampling_rate
+                                )
+                                indices_to_keep = self.rng.choice(
+                                    len(new_table["flux"]),
+                                    subsampled_length,
+                                    replace=False,
+                                )
+
                                 aug_table = new_table[indices_to_keep]
+                                if self.jd_scatter_sigma > 0:
+                                    aug_table = self.scatter_jd(
+                                        table=aug_table, sigma=self.jd_scatter_sigma
+                                    )
                                 noisy_lcs.append(aug_table)
                             else:
                                 noisy_lcs.append(new_table)
@@ -348,11 +363,21 @@ class Noisify(object):
         model["z"] = z_sim
         bandflux_sim = model.bandflux(lc_table["band"], time=lc_table["jd"])
         bandflux_sim[bandflux_sim == 0.0] = 1e-10
-        # kcorr_mag_list.append(-2.5 * np.log10(bandflux_obs / bandflux_sim))
         kcorr_mag = np.nan_to_num(self.flux_to_mag(bandflux_obs / bandflux_sim, 0))
         kcorr_flux = bandflux_obs - bandflux_sim
 
         return kcorr_mag, kcorr_flux
+
+    def scatter_jd(self, table: Table, sigma: float = 0.05) -> Table:
+        """
+        Add scatter to the observation jd of a table
+        """
+        jd_old = table["jd"].value
+        jd_noise = self.rng.normal(0, sigma, len(jd_old))
+        jd_scatter = jd_old + jd_noise
+        table["jd"] = jd_scatter
+
+        return table
 
     @staticmethod
     def flux_to_mag(flux, zp):

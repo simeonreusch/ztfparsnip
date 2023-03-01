@@ -307,6 +307,7 @@ class CreateLightcurves(object):
         SN_threshold: float = 5.0,
         n_det_threshold: float = 5.0,
         subsampling_rate: float = 1.0,
+        jd_scatter_sigma: float = 0.0,
         n: int | None = None,
         plot_iband: bool = False,
     ):
@@ -328,6 +329,8 @@ class CreateLightcurves(object):
                     "SN_threshold": SN_threshold,
                     "n_det_threshold": n_det_threshold,
                 },
+                "subsampling_rate": subsampling_rate,
+                "jd_scatter_sigma": jd_scatter_sigma,
             }
         )
 
@@ -357,6 +360,7 @@ class CreateLightcurves(object):
                             SN_threshold=SN_threshold,
                             n_det_threshold=n_det_threshold,
                             subsampling_rate=subsampling_rate,
+                            jd_scatter_sigma=jd_scatter_sigma,
                             output_format=self.output_format,
                         )
 
