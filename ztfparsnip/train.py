@@ -3,18 +3,20 @@
 import logging
 import os
 import subprocess
+import sys
 import time
 import warnings
 from pathlib import Path
 from typing import Tuple
 
-import astropy
+import astropy  # type: ignore
 import lcdata  # type: ignore
 import numpy as np
 import pandas as pd  # type: ignore
 import parsnip  # type: ignore
 import torch
 from numpy.random import default_rng
+from tqdm import tqdm
 from ztfparsnip import io
 
 
@@ -314,15 +316,11 @@ class Train:
             if isinstance(dataset, lcdata.HDF5Dataset):
                 chunk_size = 1000
                 num_chunks = dataset.count_chunks(chunk_size)
-                chunks = tqdm(
-                    dataset.iterate_chunks(chunk_size),
-                    total=num_chunks,
-                    file=sys.stdout,
-                )
+                chunks = dataset.iterate_chunks(chunk_size)
             else:
                 chunks = [dataset]
 
-            predictions = []
+            predictions_list = []
 
             for chunk in chunks:
                 # Preprocess the light curves
@@ -330,9 +328,9 @@ class Train:
 
                 # Generate the prediction
                 chunk_predictions = model.predict_dataset(chunk)
-                predictions.append(chunk_predictions)
+                predictions_list.append(chunk_predictions)
 
-            predictions = astropy.table.vstack(predictions, "exact")
+            predictions = astropy.table.vstack(predictions_list, "exact")
 
             predictions.write(
                 self.predictions_path,
