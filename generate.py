@@ -27,7 +27,10 @@ if __name__ == "__main__":
         validation_fraction=0.0,
     )
     sample.select()
-    sample.create(plot_debug=False, subsampling_rate=0.9, jd_scatter_sigma=0.03)
+    sample.create(
+        plot_debug=False, subsampling_rate=0.9, jd_scatter_sigma=0.03, start=0
+    )
+    # 4731
     # train = Train(classkey="simpleclasses", no_redshift=False, seed=0)
     # train.classify(model_path=Path("models") / "train_bts_all_model_with_z.hd5")
     # train.evaluate()

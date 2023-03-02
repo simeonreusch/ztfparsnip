@@ -86,6 +86,11 @@ class Noisify(object):
         n_iter = 0
 
         while len(noisy_lcs) < (self.multiplier - 1):
+            # check for stars
+            truez = float(table.meta["bts_z"])
+            if truez == 0:
+                break
+
             new_table, sim_z = self.get_noisified_data(table, self.delta_z)
 
             if new_table is not None:
@@ -144,14 +149,17 @@ class Noisify(object):
             else:
                 res.append(0)
             """
-            Prevent being stuck with a lightcurve never yielding a noisified one making the snt threshold. If it fails 50 times, we move on
+            Prevent being stuck with a lightcurve never yielding a noisified one making the snt threshold. If it fails 50 times after start or 2000 times in a row, we move on.
             """
-            # print(f"n_iter: {n_iter} / generated: {len(noisy_lcs)}")
-            if n_iter == 50:
-                if sum(res[-50:]) == 0:
-                    break
-
             n_iter += 1
+
+            if n_iter == 50 or n_iter % 2000 == 0:
+                if sum(res[-50:]) == 0 or sum(res[-2000:]) == 0:
+                    print(
+                        f"ABORT! (stats: n_iter: {n_iter} / generated: {len(noisy_lcs)})"
+                    )
+                    print(table.meta["type"])
+                    break
 
         if self.output_format == "parsnip":
             table.keep_columns(
@@ -286,9 +294,6 @@ class Noisify(object):
         fluxerr_old = this_lc["fluxerr"]
         truez = float(this_lc.meta["bts_z"])
         zp = this_lc["zp"]
-
-        if truez == 0:
-            return None, None
 
         new_z = self.rng.choice(self.z_valid_list)
 
