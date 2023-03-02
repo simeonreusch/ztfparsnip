@@ -88,8 +88,9 @@ def get_lightcurve(ztfid: str, lc_dir: Path | None = None):
 
     config = load_config()
 
-    if header.get("bts_class") in config["simpleclasses"]["star"]:
-        header["bts_z"] = 0
+    if header is not None:
+        if header.get("bts_class") in config["simpleclasses"]["star"]:
+            header["bts_z"] = 0
 
     if header is not None:
         if header.get("bts_z") in ["-", None]:
