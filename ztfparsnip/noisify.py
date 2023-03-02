@@ -287,6 +287,9 @@ class Noisify(object):
         truez = float(this_lc.meta["bts_z"])
         zp = this_lc["zp"]
 
+        if truez == 0:
+            return None, None
+
         new_z = self.rng.choice(self.z_valid_list)
 
         delta_m = cosmo.distmod(new_z) - cosmo.distmod(truez)

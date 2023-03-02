@@ -18,16 +18,16 @@ if __name__ == "__main__":
         output_format="ztfnuclear",
         classkey="simpleclasses",
         weights=weights,
-        train_dir=Path("train_ztfnuclear"),
+        train_dir=Path("train_ztfnuclear_fixstar"),
         plot_dir=Path("plot"),
-        # validation_dir=Path("validation_ztfnuclear"),
+        validation_dir=Path("validation_ztfnuclear"),
         seed=0,
         phase_lim=False,
         k_corr=True,
-        validation_fraction=0,
+        validation_fraction=0.0,
     )
     sample.select()
-    sample.create(plot_debug=True, subsampling_rate=0.9, jd_scatter_sigma=0.03, n=50)
+    sample.create(plot_debug=False, subsampling_rate=0.9, jd_scatter_sigma=0.03)
     # train = Train(classkey="simpleclasses", no_redshift=False, seed=0)
     # train.classify(model_path=Path("models") / "train_bts_all_model_with_z.hd5")
     # train.evaluate()
