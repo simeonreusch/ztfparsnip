@@ -15,12 +15,12 @@ weights = {"sn_ia": 15650, "tde": 15650, "sn_other": 15650, "agn": 15650, "star"
 
 if __name__ == "__main__":
     sample = CreateLightcurves(
-        output_format="ztfnuclear",
+        output_format="parsnip",
         classkey="simpleclasses",
         weights=weights,
-        train_dir=Path("train_ztfnuclear_fixstar"),
+        train_dir=Path("train_parsnip_fixstar"),
         plot_dir=Path("plot"),
-        validation_dir=Path("validation_ztfnuclear"),
+        validation_dir=Path("validation_parsnip"),
         seed=0,
         phase_lim=False,
         k_corr=True,

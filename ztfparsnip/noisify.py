@@ -91,7 +91,7 @@ class Noisify(object):
             if truez == 0:
                 break
 
-            new_table, sim_z = self.get_noisified_data(table, self.delta_z)
+            new_table, sim_z = self.get_noisified_data(table)
 
             if new_table is not None:
                 # Add k correction
@@ -281,7 +281,7 @@ class Noisify(object):
 
         return phot_tab
 
-    def get_noisified_data(self, lc_table, delta_z):
+    def get_noisified_data(self, lc_table):
         this_lc = copy(lc_table)
         this_lc = this_lc[this_lc["flux"] > 0.0]
         if len(this_lc) == 0:

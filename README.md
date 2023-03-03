@@ -9,7 +9,7 @@ The package is maintained by [A. Townsend](https://github.com/aotownsend) (HU Be
 
 The following augmentation steps are taken:
 
-- draw uniformly from a redshift distribution with maximum redshift increase `delta_z`
+- draw from a cubic redshift distribution with maximum redshift increase `delta_z`
 - only accept lightcurves with at least one datapoint making the signal-to-noise threshold `SN_threshold`
 - only accept lightcurves with at least `n_det_threshold` datapoints
 - for those lightcurves that have an existing SNCosmo template, apply a K-correction at that magnitude (if `k_corr=True`)
