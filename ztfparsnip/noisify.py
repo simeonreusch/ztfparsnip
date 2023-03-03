@@ -45,7 +45,7 @@ class Noisify(object):
         delta_z: float = 0.1,
         sig_noise_cut: bool = True,
         SN_threshold: float = 5.0,
-        n_det_threshold: float = 5,
+        n_det_threshold: int = 5,
         subsampling_rate: float = 1.0,
         jd_scatter_sigma: float = 0.0,
     ):
