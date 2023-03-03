@@ -17,9 +17,8 @@ The following augmentation steps are taken:
 - add some scatter to the observed dates (`jd_scatter_sigma` in days)
 - if `phase_lim=True`, only keep datapoints during a typical duration (depends on the type of source)
 
-:::warning
+:warning:
 Note that a high `delta_z` without loosening the `SN_threshold` and `n_det_threshold` will result in a large dropout rate, which will ultimately lead to far less lightcurves being generated than initially desired.
-:::
 
 ## Usage
 ### Create augmented training sample
