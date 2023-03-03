@@ -25,7 +25,9 @@ Note that a high `delta_z` without loosening the `SN_threshold` and `n_det_thres
 ```python
 from pathlib import Path
 from ztfparsnip.create import CreateLightcurves
+
 weights = {"sn_ia": 9400, "tde": 9400, "sn_other": 9400, "agn": 9400, "star": 9400}
+
 if __name__ == "__main__":
     sample = CreateLightcurves(
         output_format="parsnip",
@@ -44,6 +46,7 @@ if __name__ == "__main__":
 ### Train Parsnip with the augmented sample
 ```python
 from ztfparsnip.train import Train
+
 if __name__ == "__main__":
     train = Train(classkey="simpleclasses", seed=None)
     train.run()
