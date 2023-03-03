@@ -7,12 +7,11 @@ Retrain [Parsnip](https://github.com/LSSTDESC/parsnip) for [ZTF](https://www.ztf
 
 The package is maintained by [A. Townsend](https://github.com/aotownsend) (HU Berlin) and [S. Reusch](https://github.com/simeonreusch) (DESY).
 
-The following augmentation steps are taken:
+The following augmentation steps are taken for each parent lightcurve to generate a desired number of children (calculated via `weights`):
 
-- draw from a cubic redshift distribution with maximum redshift increase `delta_z`
-- only accept lightcurves with at least one datapoint making the signal-to-noise threshold `SN_threshold`
-- only accept lightcurves with at least `n_det_threshold` datapoints
-- for those lightcurves that have an existing SNCosmo template, apply a [K-correction](https://en.wikipedia.org/wiki/K_correction) at that magnitude (if `k_corr=True`)
+- draw a new redshift from a cubic distribution with maximum redshift increase `delta_z`
+- only accept the lightcurve if at least `n_det_threshold` datapoints are above the signal-to-noise threshold `SN_threshold`
+- if the lightcurve has an existing SNCosmo template, apply a [K-correction](https://en.wikipedia.org/wiki/K_correction) at that magnitude (if `k_corr=True`)
 - randomly drop datapoints until `subsampling_rate` is reached
 - add some scatter to the observed dates (`jd_scatter_sigma` in days)
 - if `phase_lim=True`, only keep datapoints during a typical duration (depends on the type of source)
