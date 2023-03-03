@@ -3,7 +3,7 @@
 [![CI](https://github.com/simeonreusch/ztfparsnip/actions/workflows/ci.yaml/badge.svg)](https://github.com/simeonreusch/ztfparsnip/actions/workflows/ci.yaml)
 [![Coverage Status](https://coveralls.io/repos/github/simeonreusch/ztfparsnip/badge.svg?branch=main)](https://coveralls.io/github/simeonreusch/ztfparsnip?branch=main)
 
-Retrain [Parsnip](https://github.com/LSSTDESC/parsnip) for ZTF. This is achieved by using [fpbot](https://github.com/simeonreusch/fpbot) forced photometry lightcurves of the [Bright Transient Survey](https://sites.astro.caltech.edu/ztf/bts/bts.php). These are augmented (redshifted, noisifed and - when possible - K-corrected).
+Retrain [Parsnip](https://github.com/LSSTDESC/parsnip) for [ZTF](https://www.ztf.caltech.edu/). This is achieved by using [fpbot](https://github.com/simeonreusch/fpbot) forced photometry lightcurves of the [Bright Transient Survey](https://sites.astro.caltech.edu/ztf/bts/bts.php). These are augmented (redshifted, noisified and - when possible - K-corrected).
 
 The package is maintained by [A. Townsend](https://github.com/aotownsend) (HU Berlin) and [S. Reusch](https://github.com/simeonreusch) (DESY).
 
@@ -12,7 +12,7 @@ The following augmentation steps are taken:
 - draw from a cubic redshift distribution with maximum redshift increase `delta_z`
 - only accept lightcurves with at least one datapoint making the signal-to-noise threshold `SN_threshold`
 - only accept lightcurves with at least `n_det_threshold` datapoints
-- for those lightcurves that have an existing SNCosmo template, apply a K-correction at that magnitude (if `k_corr=True`)
+- for those lightcurves that have an existing SNCosmo template, apply a [K-correction](https://en.wikipedia.org/wiki/K_correction) at that magnitude (if `k_corr=True`)
 - randomly drop datapoints until `subsampling_rate` is reached
 - add some scatter to the observed dates (`jd_scatter_sigma` in days)
 - if `phase_lim=True`, only keep datapoints drugin a typical duration (depends on the type of source)
