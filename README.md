@@ -21,7 +21,7 @@ The following augmentation steps are taken:
 Note that a high `delta_z` without loosening the `SN_threshold` and `n_det_threshold` will result in a large dropout rate, which will ultimately lead to far less lightcurves being generated than initially desired.
 
 ## Usage
-### Create augmented training sample
+### Create an augmented training sample
 ```python
 from pathlib import Path
 from ztfparsnip.create import CreateLightcurves
