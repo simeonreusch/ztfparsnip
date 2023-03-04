@@ -87,6 +87,7 @@ simpleclasses:
   star:
     - nova
     - AM CVn
+    - AMCVn
     - CV?
     - CV
     - varstar
@@ -205,6 +206,7 @@ upperclasses:
   star:
     - nova
     - AM CVn
+    - AMCVn
     - CV?
     - CV
     - varstar
