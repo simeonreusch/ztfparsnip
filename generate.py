@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # )
     # 4731
     train = Train(
-        path=Path("train_bts_all.h5"),
+        # path=Path("train_bts_all.h5"),
         classkey="simpleclasses",
         train_test_fraction=0.7,
         no_redshift=False,
