@@ -269,7 +269,7 @@ class Train:
         test_dataset = dataset[test_mask]
 
         self.logger.info(
-            f"Train size: {len(train_dataset)} / test size: {len(test_dataset)})"
+            f"Train size: {len(train_dataset)} / test size: {len(test_dataset)}"
         )
 
         return train_dataset, test_dataset
