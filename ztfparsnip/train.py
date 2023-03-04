@@ -253,11 +253,11 @@ class Train:
         )
         unique_parents = self.meta.parent_id.unique()
         size_train = int(train_test_fraction * len(unique_parents))
-        train_parents = self.rng.choice(unique_parents, size=size_train)
-        test_df = self.meta.query("parent_id in @train_parents")
+        train_parents = self.rng.choice(unique_parents, size=size_train, replace=False)
+        test_df = self.meta.query("parent_id not in @train_parents")
 
         self.logger.info(
-            f"Making sure no parent IDs are shared between train and test. Effective ratio: {len(test_df)/len(self.meta):.2f}"
+            f"Making sure no parent IDs are shared between train and test. Effective ratio: {1-(len(test_df)/len(self.meta)):.2f}"
         )
 
         train_mask = np.ones(len(dataset), dtype=bool)
