@@ -26,6 +26,7 @@ class Train:
         path: Path | str = Path("train"),
         classkey: str | None = None,
         no_redshift: bool = False,
+        train_test_fraction: float = 0.7,
         seed=None,
         name: str = "train",
     ):
@@ -34,6 +35,7 @@ class Train:
         self.name = name
         self.logger = logging.getLogger(__name__)
         self.no_redshift = no_redshift
+        self.train_test_fraction = train_test_fraction
         self.rng = default_rng(seed=seed)
 
         self.config = io.load_config()
@@ -185,7 +187,9 @@ class Train:
         dataset = model.preprocess(dataset)
 
         # do own test train validation split here!!!!
-        train_dataset, test_dataset = self.split_train_test(dataset)
+        train_dataset, test_dataset = self.split_train_test(
+            dataset, train_test_fraction=self.train_test_fraction
+        )
 
         model.fit(
             train_dataset, test_dataset=test_dataset, max_epochs=args["max_epochs"]
@@ -238,15 +242,17 @@ class Train:
         return label_map_parsnip, valid_classes
 
     def split_train_test(
-        self, dataset: lcdata.dataset.Dataset, ratio=0.1
+        self, dataset: lcdata.dataset.Dataset, train_test_fraction: float = 0.7
     ) -> Tuple[lcdata.dataset.Dataset, lcdata.dataset.Dataset]:
         """
         Split train and test set.
         Default ratio 0.1 (90% training, 10% testing)
         """
-        self.logger.info(f"Splitting train and test dataset. Selected ratio: {ratio}")
+        self.logger.info(
+            f"Splitting train and test dataset. Selected ratio: {train_test_fraction}"
+        )
         unique_parents = self.meta.parent_id.unique()
-        size_train = int(ratio * len(unique_parents))
+        size_train = int(train_test_fraction * len(unique_parents))
         train_parents = self.rng.choice(unique_parents, size=size_train)
         test_df = self.meta.query("parent_id in @train_parents")
 
@@ -261,6 +267,10 @@ class Train:
 
         train_dataset = dataset[train_mask]
         test_dataset = dataset[test_mask]
+
+        self.logger.info(
+            f"Train size: {len(train_dataset)} / test size: {len(test_dataset)})"
+        )
 
         return train_dataset, test_dataset
 
