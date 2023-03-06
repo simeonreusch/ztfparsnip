@@ -51,7 +51,7 @@ if __name__ == "__main__":
     train.run()
 ```
 
-### Evaluate
+### Evaluate the Parsnip model
 ```python
 from ztfparsnip.train import Train
 
