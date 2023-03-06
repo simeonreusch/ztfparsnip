@@ -52,4 +52,10 @@ if __name__ == "__main__":
 ```
 
 ### Evaluate
-Coming soon.
+```python
+from ztfparsnip.train import Train
+
+if __name__ == "__main__":
+    train = Train(classkey="simpleclasses", seed=None)
+    train.classify()
+```
