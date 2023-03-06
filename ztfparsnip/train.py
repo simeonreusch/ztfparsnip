@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd  # type: ignore
 import parsnip  # type: ignore
 import torch
+from matplotlib import pyplot as plt
 from numpy.random import default_rng
 from tqdm import tqdm
 from ztfparsnip import io
@@ -279,6 +280,7 @@ class Train:
         model_path: Path | str | None = None,
         predictions_path: Path | str | None = None,
         validation_path: Path | str | None = None,
+        plot_path: Path | str | None = None,
     ):
         """
         Evaluate the trained model with the validation lightcurves
@@ -311,6 +313,17 @@ class Train:
             )
         else:
             self.validation_path = Path(validation_path)
+        if plot_path is None:
+            self.plot_path = (
+                model_path.resolve().parent.parent
+                / "plot"
+                / (self.name + "_bts" + "_confusion_matrix.pdf")
+            )
+        else:
+            self.plot_path = Path(plot_path)
+
+        files_to_check = [self.validation_path, model_path]
+        self.check_files(paths=files_to_check)
 
         model = parsnip.load_model(
             str(model_path),
@@ -381,6 +394,15 @@ class Train:
 
         classifications_validation = classifier.classify(validation_predictions)
 
-        parsnip.plot_confusion_matrix(
+        ax = parsnip.plot_confusion_matrix(
             validation_predictions, classifications_validation
         )
+        plt.savefig(self.plot_path)
+
+    def check_files(self, paths: list[Path]):
+        """
+        Check each path in the paths list if the file exists.
+        """
+        for path in paths:
+            if not path.is_file():
+                raise ValueError(f"{path} is not a file")
