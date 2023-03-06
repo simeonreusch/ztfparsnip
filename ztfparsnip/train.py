@@ -113,20 +113,18 @@ class Train:
             f"There are {n_parent_id} parent objects. From these, {len(self.meta)} lightcurves have been created."
         )
 
-    def run(self, threads: int = 10, outfile: str | Path | None = None):
+    def run(self, threads: int = 10, model_path: str | Path | None = None):
         """Run the actual train command"""
-        if outfile is not None:
-            outfile = Path(outfile)
+        if model_path is not None:
+            self.model_path = Path(model_path)
 
-        if outfile is None:
-            model_dir = Path("models").resolve()
+        else:
+            model_dir = self.base_dir / "models"
             if not model_dir.exists():
                 os.makedirs(model_dir)
-            outfile = model_dir / self.training_path.with_name(
-                self.training_path.stem + "_model.hd5"
-            )
+            self.model_path = model_dir / (self.training_path.stem + "_model.hd5")
 
-        self.logger.info(f"Running training. Outfile will be {outfile}")
+        self.logger.info(f"Running training. Outfile will be {self.model_path}")
 
         start_time = time.time()
 
@@ -183,7 +181,7 @@ class Train:
         self.logger.info(f"Device: {self.device} / threads: {self.threads}")
 
         model = parsnip.ParsnipModel(
-            path=outfile,
+            path=str(self.model_path),
             bands=bands,
             device=self.device,
             threads=self.threads,
@@ -214,13 +212,13 @@ class Train:
 
         with open("./parsnip_results.log", "a") as f:
             print(
-                f"{outfile} {model.epoch} {elapsed_time:.2f} {train_score:.4f} "
+                f"{self.model_path} {model.epoch} {elapsed_time:.2f} {train_score:.4f} "
                 f"{test_score:.4f}",
                 file=f,
             )
 
         self.logger.info(
-            f"outfile={outfile} epoch={model.epoch} elapsed_time={elapsed_time:.2f} train_score={train_score:.4f} test_score={test_score:.4f}"
+            f"model path={self.model_path} epoch={model.epoch} elapsed_time={elapsed_time:.2f} train_score={train_score:.4f} test_score={test_score:.4f}"
         )
 
     def get_classes(self):
@@ -305,7 +303,7 @@ class Train:
 
         if predictions_path is None:
             predictions_dir = self.base_dir / "predictions"
-            if not predictions_dir.exists():
+            if not predictions_dir.is_dir():
                 os.makedirs(predictions_dir)
             self.predictions_path = predictions_dir / (
                 str(self.training_path.stem) + "_predictions.h5"
@@ -318,9 +316,10 @@ class Train:
             self.validation_path = Path(validation_path)
 
         if plot_path is None:
-            self.plot_path = (
-                self.base_dir / "plot" / (self.name + "_bts" + "_confusion_matrix.pdf")
-            )
+            plot_dir = self.base_dir / "plot"
+            if not plot_dir.is_dir():
+                os.makedirs(plot_dir)
+            self.plot_path = plot_dir / (self.name + "_bts" + "_confusion_matrix.pdf")
         else:
             self.plot_path = Path(plot_path)
 
