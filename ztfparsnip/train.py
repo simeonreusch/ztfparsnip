@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd  # type: ignore
 import parsnip  # type: ignore
 import torch
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt  # type: ignore
 from numpy.random import default_rng
 from tqdm import tqdm
 from ztfparsnip import io
@@ -24,15 +24,14 @@ from ztfparsnip import io
 class Train:
     def __init__(
         self,
-        path: Path | str = Path("train"),
+        data_dir: Path | str | None = None,
+        training_path: Path | str | None = None,
         classkey: str | None = None,
         no_redshift: bool = False,
         train_test_fraction: float = 0.7,
         seed=None,
         name: str = "train",
     ):
-        if isinstance(path, str):
-            path = Path(path)
         self.name = name
         self.logger = logging.getLogger(__name__)
         self.no_redshift = no_redshift
@@ -63,10 +62,17 @@ class Train:
         else:
             self.classkey = classkey
 
-        if path.is_dir():
-            self.training_path = path / f"{self.name}_bts_all.h5"
+        if data_dir is not None:
+            self.base_dir = Path(data_dir)
+
         else:
-            self.training_path = path
+            self.base_dir = io.BASE_DIR.absolute()
+
+        if training_path is not None:
+            self.training_path = Path(training_path)
+        else:
+            training_path = self.base_dir / "train"
+            self.training_path = training_path / f"{self.name}_bts_all.h5"
 
         meta_df = lcdata.read_hdf5(self.training_path, in_memory=False).meta.to_pandas()
 
@@ -286,20 +292,19 @@ class Train:
         Evaluate the trained model with the validation lightcurves
         """
         if model_path is not None:
-            model_path = Path(model_path)
+            self.model_path = Path(model_path)
 
         if model_path is None:
-            model_dir = Path("models").resolve()
+            model_dir = self.base_dir / "models"
             if not model_dir.exists():
                 os.makedirs(model_dir)
-            model_path = model_dir / self.training_path.with_name(
-                self.training_path.stem + "_model.hd5"
-            )
+            self.model_path = model_dir / (self.training_path.stem + "_model.hd5")
+
         if predictions_path is not None:
             self.predictions_path = Path(predictions_path)
 
         if predictions_path is None:
-            predictions_dir = Path("predictions").resolve()
+            predictions_dir = self.base_dir / "predictions"
             if not predictions_dir.exists():
                 os.makedirs(predictions_dir)
             self.predictions_path = predictions_dir / (
@@ -307,26 +312,27 @@ class Train:
             )
         if validation_path is None:
             self.validation_path = (
-                model_path.resolve().parent.parent
-                / "validation"
-                / (self.name + "_bts" + "_validation.h5")
+                self.base_dir / "validation" / (self.name + "_bts" + "_validation.h5")
             )
         else:
             self.validation_path = Path(validation_path)
+
         if plot_path is None:
             self.plot_path = (
-                model_path.resolve().parent.parent
-                / "plot"
-                / (self.name + "_bts" + "_confusion_matrix.pdf")
+                self.base_dir / "plot" / (self.name + "_bts" + "_confusion_matrix.pdf")
             )
         else:
             self.plot_path = Path(plot_path)
 
-        files_to_check = [self.validation_path, model_path]
+        self.logger.info(
+            f"Paths chosen\nInput\nModel = {self.model_path}\nValidation: {self.validation_path}\nOutput\nPredictions: {self.predictions_path}\nPlots: {self.plot_path}"
+        )
+
+        files_to_check = [self.validation_path, self.model_path]
         self.check_files(paths=files_to_check)
 
         model = parsnip.load_model(
-            str(model_path),
+            str(self.model_path),
             device=self.device,
             threads=self.threads,
         )

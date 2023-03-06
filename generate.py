@@ -32,12 +32,16 @@ if __name__ == "__main__":
     # )
     # 4731
     train = Train(
-        # path=Path("train_bts_all.h5"),
+        # path=Path("data") / "train" / "train_bts_all.h5",
+        # training_path=Path("data") / "test.h5",
+        data_dir=Path("data"),
         classkey="simpleclasses",
         train_test_fraction=0.7,
         no_redshift=False,
         seed=0,
     )
     # train.run()
-    train.classify(model_path=Path("models") / "train_bts_all_model_with_z.hd5")
+    train.classify(
+        # model_path=Path("data") / "models" / "train_bts_all_model_with_z.hd5"
+    )
     # train.evaluate()
