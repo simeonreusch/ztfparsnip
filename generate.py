@@ -38,6 +38,6 @@ if __name__ == "__main__":
         no_redshift=False,
         seed=0,
     )
-    # train.classify(model_path=Path("models") / "train_bts_all_model_with_z.hd5")
+    # train.run()
+    train.classify(model_path=Path("models") / "train_bts_all_model_with_z.hd5")
     # train.evaluate()
-    train.run()

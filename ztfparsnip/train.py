@@ -278,6 +278,7 @@ class Train:
         self,
         model_path: Path | str | None = None,
         predictions_path: Path | str | None = None,
+        validation_path: Path | str | None = None,
     ):
         """
         Evaluate the trained model with the validation lightcurves
@@ -302,6 +303,14 @@ class Train:
             self.predictions_path = predictions_dir / (
                 str(self.training_path.stem) + "_predictions.h5"
             )
+        if validation_path is None:
+            self.validation_path = (
+                model_path.resolve().parent.parent
+                / "validation"
+                / (self.name + "_bts" + "_validation.h5")
+            )
+        else:
+            self.validation_path = Path(validation_path)
 
         model = parsnip.load_model(
             str(model_path),
@@ -361,7 +370,7 @@ class Train:
         classifier.train(predictions)
 
         dataset_validation = parsnip.load_datasets(
-            ["validation/train_bts_validation.h5"],
+            [str(self.validation_path)],
             require_redshift=False,
             label_map=label_map,
             valid_classes=valid_classes,
