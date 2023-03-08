@@ -218,7 +218,7 @@ def short_id():
     return "".join(random.choices(alphabet, k=5))
 
 
-def get_all_ztfids(lc_dir: Path | None = None, test: bool = False) -> List[str]:
+def get_all_ztfids(lc_dir: Path | None = None, testing: bool = False) -> List[str]:
     """
     Checks the lightcurve folder and gets all ztfids
     """
@@ -234,7 +234,7 @@ def get_all_ztfids(lc_dir: Path | None = None, test: bool = False) -> List[str]:
                 ztfid = name[:-4]
             ztfids.append(ztfid)
 
-    if test:
+    if testing:
         config = load_config()
         ztfids = [ztfid for ztfid in ztfids if ztfid in config["test_lightcurves"]]
 
@@ -255,12 +255,12 @@ def load_config(config_path: Path | None = None) -> dict:
     return config
 
 
-def download_sample(test: bool = False):
+def download_sample(testing: bool = False):
     """
     Download the BTS + TDE lightcurves from the DESY Nextcloud
     """
     if ZTFDATA := os.getenv("ZTFDATA"):
-        if test:
+        if testing:
             cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE_TEST}"
         else:
             cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE}"
@@ -279,9 +279,9 @@ def download_sample(test: bool = False):
 
         # Validate
         nr_files = len([x for x in extracted_dir.glob("*") if x.is_file()])
-        if nr_files == 6841 and test:
+        if nr_files == 6841 and testing:
             subprocess.run(cmd_remove_zip, shell=True)
-        elif nr_files == 10 and test:
+        elif nr_files == 10 and testing:
             subprocess.run(cmd_remove_zip, shell=True)
         else:
             raise ValueError(

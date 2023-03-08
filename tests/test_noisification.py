@@ -18,7 +18,7 @@ class TestNoisification(unittest.TestCase):
     def test_noisification_parsnip(self):
         self.logger.info("\n\n Generating noisified lightcurves\n")
 
-        weights = {"sn_ia": 20, "sn_other": 20, "tde": 20}
+        weights = {"snia": 20, "sn_other": 20, "tde": 20}
 
         sample = CreateLightcurves(
             output_format="parsnip",
@@ -29,7 +29,7 @@ class TestNoisification(unittest.TestCase):
             seed=100,
             phase_lim=True,
             k_corr=True,
-            test=True,
+            testing=True,
         )
         sample.select()
         sample.create(plot_debug=True)
@@ -37,7 +37,7 @@ class TestNoisification(unittest.TestCase):
     def test_noisification_csv(self):
         self.logger.info("\n\n Generating noisified lightcurves\n")
 
-        weights = {"sn_ia": 20, "sn_other": 20, "tde": 20}
+        weights = {"snia": 20, "sn_other": 20, "tde": 20}
 
         sample = CreateLightcurves(
             output_format="ztfnuclear",
@@ -49,13 +49,13 @@ class TestNoisification(unittest.TestCase):
             phase_lim=True,
             k_corr=True,
             plot_magdist=True,
-            test=True,
+            testing=True,
         )
         sample.select()
         sample.create(plot_debug=True)
 
         for name in ["ZTF19aapreis", "ZTF20acvmzfv"]:
-            path = sample.validation_dir / f"{name}.csv"
+            path = sample.test_dir / f"{name}.csv"
             pd.read_csv(path, comment="#")
 
         infile_noisified = sample.train_dir / "ZTF18aavvnzu_3.csv"
@@ -142,4 +142,4 @@ class TestNoisification(unittest.TestCase):
             22.04574997,
         ]
 
-        np.testing.assert_almost_equal(df.magpsf.values, reference_mags, decimal=5)
+        np.test.assert_almost_equal(df.magpsf.values, reference_mags, decimal=5)

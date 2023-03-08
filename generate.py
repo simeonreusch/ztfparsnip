@@ -20,23 +20,20 @@ if __name__ == "__main__":
     #     weights=weights,
     #     train_dir=Path("train_parsnip_fixstar"),
     #     plot_dir=Path("plot"),
-    #     validation_dir=Path("validation_parsnip_fixstar"),
+    #     test_dir=Path("test_parsnip_fixstar"),
     #     seed=0,
     #     phase_lim=False,
     #     k_corr=True,
-    #     validation_fraction=0.0,
+    #     test_fraction=0.0,
     # )
     # sample.select()
     # sample.create(
     #     plot_debug=False, subsampling_rate=0.9, jd_scatter_sigma=0.03, start=0
     # )
-    # 4731
     train = Train(
-        # path=Path("data") / "train" / "train_bts_all.h5",
-        # training_path=Path("data") / "test.h5",
         data_dir=Path("data"),
         classkey="simpleclasses",
-        train_test_fraction=0.7,
+        train_validation_fraction=0.7,
         no_redshift=False,
         seed=0,
     )

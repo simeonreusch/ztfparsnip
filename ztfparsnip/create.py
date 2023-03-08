@@ -26,7 +26,7 @@ class CreateLightcurves(object):
         self,
         classkey: str | None = None,
         weights: None | dict[str, Any] = None,
-        validation_fraction: float = 0.1,
+        test_fraction: float = 0.1,
         k_corr: bool = True,
         seed: int | None = None,
         bts_baseline_dir: Path = io.BTS_LC_BASELINE_DIR,
@@ -37,14 +37,14 @@ class CreateLightcurves(object):
         phase_lim: bool = True,
         train_dir: Path = io.TRAIN_DATA,
         plot_dir: Path = io.PLOT_DIR,
-        validation_dir: Path | None | str = None,
-        test: bool = False,
+        test_dir: Path | None | str = None,
+        testing: bool = False,
     ):
         super(CreateLightcurves, self).__init__()
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Creating lightcurves")
         self.weights = weights
-        self.validation_fraction = validation_fraction
+        self.test_fraction = test_fraction
         self.k_corr = k_corr
         self.seed = seed
         self.name = name
@@ -54,7 +54,7 @@ class CreateLightcurves(object):
         self.train_dir = train_dir
         self.plot_dir = plot_dir
         self.lc_dir = bts_baseline_dir
-        self.test = test
+        self.testing = testing
 
         self.rng = default_rng(seed=self.seed)
 
@@ -63,7 +63,7 @@ class CreateLightcurves(object):
             "random seed": self.seed,
             "phase limit": self.phase_lim,
             "k correction": self.k_corr,
-            "validation sample fraction": self.validation_fraction,
+            "test sample fraction": self.test_fraction,
         }
 
         assert self.output_format in ["parsnip", "ztfnuclear"]
@@ -75,12 +75,12 @@ class CreateLightcurves(object):
         if isinstance(self.plot_dir, str):
             self.plot_dir = Path(self.plot_dir)
 
-        if validation_dir is None:
-            self.validation_dir = self.train_dir.resolve().parent / "validation"
+        if test_dir is None:
+            self.test_dir = self.train_dir.resolve().parent / "test"
         else:
-            self.validation_dir = Path(validation_dir)
+            self.test_dir = Path(test_dir)
 
-        for p in [self.train_dir, self.plot_dir, self.validation_dir]:
+        for p in [self.train_dir, self.plot_dir, self.test_dir]:
             if not p.exists():
                 os.makedirs(p)
 
@@ -91,20 +91,20 @@ class CreateLightcurves(object):
         check if files are there an download if not
         """
         if self.lc_dir == io.BTS_LC_BASELINE_DIR:
-            if not self.test:
+            if not self.testing:
                 nr_files = len([x for x in self.lc_dir.glob("*") if x.is_file()])
             else:
                 nr_files = 0
                 for x in self.lc_dir.glob("*"):
                     if f"{x.name}".split("_")[0] in self.config["test_lightcurves"]:
                         nr_files += 1
-            if (self.test == False and nr_files < 6841) or (
-                self.test and nr_files < 10
+            if (self.testing == False and nr_files < 6841) or (
+                self.testing and nr_files < 10
             ):
                 self.logger.info("Downloading sample")
-                io.download_sample(test=test)
+                io.download_sample(testing=testing)
 
-        self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir, test=self.test)
+        self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir, testing=self.testing)
 
         classkeys_available = [
             key
@@ -135,7 +135,7 @@ class CreateLightcurves(object):
 
         self.logger.info("Creating noisified training data.")
         self.logger.info(
-            f"\n---------------------------------\nSelected configuration\nweights: {weights_info}\nk correction: {self.k_corr}\nvalidation fraction: {self.validation_fraction}\nseed: {self.seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}\n---------------------------------"
+            f"\n---------------------------------\nSelected configuration\nweights: {weights_info}\nk correction: {self.k_corr}\ntest fraction: {self.test_fraction}\nseed: {self.seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}\n---------------------------------"
         )
 
     def get_simple_class(self, classkey: str, bts_class: str) -> str:
@@ -212,7 +212,7 @@ class CreateLightcurves(object):
         """
         classes_available = {}
         self.selection = {}
-        self.validation_sample = {"all": {"ztfids": [], "entries": 0}}
+        self.test_sample = {"all": {"ztfids": [], "entries": 0}}
 
         # Check if we do relative amounts of lightcurves or absolute
         weight_values = list(self.weights.values())
@@ -253,21 +253,21 @@ class CreateLightcurves(object):
             f"\n---------------------------------\nLightcurves available:\n{availability}---------------------------------"
         )
         for k, v in classes_available.items():
-            validation_number = math.ceil(
-                self.validation_fraction * classes_available[k]["entries"]
+            test_number = math.ceil(
+                self.test_fraction * classes_available[k]["entries"]
             )
-            validation_ztfids = self.rng.choice(
-                classes_available[k].get("ztfids"), size=validation_number
+            test_ztfids = self.rng.choice(
+                classes_available[k].get("ztfids"), size=test_number
             )
-            all_validation_ztfids = self.validation_sample["all"]["ztfids"]
-            all_validation_ztfids.extend(validation_ztfids)
-            self.validation_sample.update(
+            all_test_ztfids = self.test_sample["all"]["ztfids"]
+            all_test_ztfids.extend(test_ztfids)
+            self.test_sample.update(
                 {
-                    k: {"ztfids": validation_ztfids, "entries": len(validation_ztfids)},
+                    k: {"ztfids": test_ztfids, "entries": len(test_ztfids)},
                     "all": {
-                        "entries": self.validation_sample["all"]["entries"]
-                        + len(validation_ztfids),
-                        "ztfids": all_validation_ztfids,
+                        "entries": self.test_sample["all"]["entries"]
+                        + len(test_ztfids),
+                        "ztfids": all_test_ztfids,
                     },
                 }
             )
@@ -317,7 +317,7 @@ class CreateLightcurves(object):
         failed: dict[str, list] = {"no_z": [], "no_class": [], "no_lc_after_cuts": []}
 
         final_lightcurves: dict[str, list] = {
-            "bts_validation": [],
+            "bts_test": [],
             "bts_orig": [],
             "bts_noisified": [],
         }
@@ -340,13 +340,13 @@ class CreateLightcurves(object):
             if lc is not None:
                 if (c := header[self.classkey]) is not None:
                     if c in self.selection.keys():
-                        # check if it's a validation sample lightcurve
-                        if header["name"] in self.validation_sample["all"]["ztfids"]:
+                        # check if it's a test sample lightcurve
+                        if header["name"] in self.test_sample["all"]["ztfids"]:
                             multiplier = 0
-                            get_validation = True
+                            get_test = True
                         else:
                             multiplier = self.selection[c]
-                            get_validation = False
+                            get_test = False
 
                         noisify = Noisify(
                             table=lc,
@@ -364,16 +364,14 @@ class CreateLightcurves(object):
                             output_format=self.output_format,
                         )
 
-                        if get_validation:
-                            validation_lc, _ = noisify.noisify_lightcurve()
-                            if validation_lc is not None:
-                                final_lightcurves["bts_validation"].append(
-                                    validation_lc
-                                )
+                        if get_test:
+                            test_lc, _ = noisify.noisify_lightcurve()
+                            if test_lc is not None:
+                                final_lightcurves["bts_test"].append(test_lc)
                                 if self.output_format == "ztfnuclear":
                                     io.save_csv_with_header(
-                                        validation_lc,
-                                        savedir=self.validation_dir,
+                                        test_lc,
+                                        savedir=self.test_dir,
                                         output_format=self.output_format,
                                     )
 
@@ -447,7 +445,7 @@ class CreateLightcurves(object):
             f"Generated {len(final_lightcurves['bts_noisified'])} noisified additional lightcurves from {len(final_lightcurves['bts_orig'])} original lightcurves"
         )
         self.logger.info(
-            f"Kept {len(final_lightcurves['bts_validation'])} lightcurves for validation"
+            f"Kept {len(final_lightcurves['bts_test'])} lightcurves for test"
         )
 
         self.logger.info(f"Created per class: {generated}")
@@ -458,8 +456,8 @@ class CreateLightcurves(object):
             # Save h5 files
             for k, v in final_lightcurves.items():
                 if len(v) > 0:
-                    if k == "bts_validation":
-                        output_dir = self.validation_dir
+                    if k == "bts_test":
+                        output_dir = self.test_dir
                     else:
                         output_dir = self.train_dir
                     dataset = lcdata.from_light_curves(v)
