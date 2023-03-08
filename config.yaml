@@ -109,7 +109,7 @@ simpleclasses:
   train_on:
     - tde
     - sn_other
-    - sn_ia
+    - snia
     - agn
     - star
 

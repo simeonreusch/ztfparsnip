@@ -124,7 +124,7 @@ class CreateLightcurves(object):
         # initialize default weights
         if self.weights is None:
             self.weights = {
-                "sn_ia": 12520,
+                "snia": 12520,
                 "tde": 12520,
                 "sn_other": 12520,
             }

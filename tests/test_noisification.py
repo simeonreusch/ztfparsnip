@@ -142,4 +142,4 @@ class TestNoisification(unittest.TestCase):
             22.04574997,
         ]
 
-        np.test.assert_almost_equal(df.magpsf.values, reference_mags, decimal=5)
+        np.testing.assert_almost_equal(df.magpsf.values, reference_mags, decimal=5)
