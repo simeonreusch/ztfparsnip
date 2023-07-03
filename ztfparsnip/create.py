@@ -9,11 +9,12 @@ import os
 from pathlib import Path
 from typing import Any
 
-import lcdata  # type: ignore
-import matplotlib.pyplot as plt  # type:ignore
 import numpy
 from numpy.random import default_rng
 from tqdm import tqdm
+
+import lcdata  # type: ignore
+import matplotlib.pyplot as plt  # type:ignore
 from ztfparsnip import io, plot
 from ztfparsnip.noisify import Noisify
 
@@ -30,6 +31,7 @@ class CreateLightcurves(object):
         k_corr: bool = True,
         seed: int | None = None,
         bts_baseline_dir: Path = io.BTS_LC_BASELINE_DIR,
+        bl_corrected: bool = True,
         name: str = "train",
         reprocess_headers: bool = False,
         output_format: str = "parsnip",
@@ -53,7 +55,10 @@ class CreateLightcurves(object):
         self.plot_magdist = plot_magdist
         self.train_dir = train_dir
         self.plot_dir = plot_dir
-        self.lc_dir = bts_baseline_dir
+        if bl_corrected:
+            self.lc_dir = bts_baseline_dir
+        else:
+            self.lc_dir = io.BTS_LC_DIR
         self.testing = testing
 
         self.rng = default_rng(seed=self.seed)
@@ -90,7 +95,7 @@ class CreateLightcurves(object):
         if we are in the default sample dir, check if files are there,
         check if files are there an download if not
         """
-        if self.lc_dir == io.BTS_LC_BASELINE_DIR:
+        if self.lc_dir in [io.BTS_LC_BASELINE_DIR, io.BTS_LC_DIR]:
             if not self.testing:
                 nr_files = len([x for x in self.lc_dir.glob("*") if x.is_file()])
             else:
@@ -98,11 +103,13 @@ class CreateLightcurves(object):
                 for x in self.lc_dir.glob("*"):
                     if f"{x.name}".split("_")[0] in self.config["test_lightcurves"]:
                         nr_files += 1
-            if (self.testing == False and nr_files < 6841) or (
-                self.testing and nr_files < 10
+            if (
+                (self.testing == False and bl_corrected == True and nr_files < 6841)
+                or (self.testing == False and bl_corrected == False and nr_files < 7131)
+                or (self.testing and nr_files < 10)
             ):
                 self.logger.info("Downloading sample")
-                io.download_sample(testing=testing)
+                io.download_sample(testing=testing, bl_corrected=bl_corrected)
 
         self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir, testing=self.testing)
 
@@ -344,7 +351,7 @@ class CreateLightcurves(object):
                     if c in self.selection.keys():
                         # check if it's a test sample lightcurve
                         if header["name"] in self.test_sample["all"]["ztfids"]:
-                            #multiplier = 0
+                            # multiplier = 0
                             multiplier = self.selection[c]
                             get_test = True
                         else:
@@ -362,7 +369,7 @@ class CreateLightcurves(object):
                             sig_noise_cut=sig_noise_cut,
                             SN_threshold=SN_threshold,
                             n_det_threshold=n_det_threshold,
-                            detection_scale = detection_scale,
+                            detection_scale=detection_scale,
                             subsampling_rate=subsampling_rate,
                             jd_scatter_sigma=jd_scatter_sigma,
                             output_format=self.output_format,
@@ -389,7 +396,6 @@ class CreateLightcurves(object):
                                             savedir=self.test_dir,
                                             output_format=self.output_format,
                                         )
-                                
 
                         else:
                             bts_lc, noisy_lcs = noisify.noisify_lightcurve()

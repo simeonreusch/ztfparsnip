@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import pandas as pd
 import yaml
+
 from astropy.time import Time  # type: ignore
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ alphabet = string.ascii_lowercase + string.digits
 if ztfdir := os.getenv("ZTFDATA"):
     BASE_DIR = Path(ztfdir) / "ztfparsnip"
     BTS_LC_BASELINE_DIR = BASE_DIR / "BTS_plus_TDE"
+    BTS_LC_DIR = BASE_DIR / "BTS_plus_TDE_nobl"
     TRAIN_DATA = BASE_DIR / "train"
     PLOT_DIR = BASE_DIR / "plots"
     DOWNLOAD_URL_SAMPLE = Path(
@@ -30,8 +32,11 @@ if ztfdir := os.getenv("ZTFDATA"):
     DOWNLOAD_URL_SAMPLE_TEST = Path(
         "https://syncandshare.desy.de/index.php/s/bnGQYb9goiHi6bH/download"
     )
+    DOWNLOAD_URL_SAMPLE_NOBL = Path(
+        "https://syncandshare.desy.de/index.php/s/etCZ8tXya2poKeX/download"
+    )
 
-    for d in [BASE_DIR, BTS_LC_BASELINE_DIR, TRAIN_DATA, PLOT_DIR]:
+    for d in [BASE_DIR, BTS_LC_BASELINE_DIR, BTS_LC_DIR, TRAIN_DATA, PLOT_DIR]:
         if not d.is_dir():
             os.makedirs(d)
 
@@ -39,7 +44,7 @@ if ztfdir := os.getenv("ZTFDATA"):
 
 else:
     raise ValueError(
-        "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See github.com/mickaelrigault/ztfquery"
+        "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See https://github.com/mickaelrigault/ztfquery"
     )
 
 
@@ -255,7 +260,7 @@ def load_config(config_path: Path | None = None) -> dict:
     return config
 
 
-def download_sample(testing: bool = False):
+def download_sample(testing: bool = False, bl_corrected: bool = True):
     """
     Download the BTS + TDE lightcurves from the DESY Nextcloud
     """
@@ -263,11 +268,20 @@ def download_sample(testing: bool = False):
         if testing:
             cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE_TEST}"
         else:
-            cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE}"
+            if bl_corrected:
+                cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE}"
+            else:
+                cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE_NOBL}"
+
+        if bl_corrected:
+            zipfile_name = "BTS_plus_TDE"
+        else:
+            zipfile_name = "BTS_plus_TDE_nobl"
+
         cmd_extract = (
-            f"unzip {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip -d {ZTFDATA}/ztfparsnip"
+            f"unzip {ZTFDATA}/ztfparsnip/{zipfile_name}.zip -d {ZTFDATA}/ztfparsnip"
         )
-        cmd_remove_zip = f"rm {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip"
+        cmd_remove_zip = f"rm {ZTFDATA}/ztfparsnip/{zipfile_name}.zip"
 
         # Download
         subprocess.run(cmd_dl, shell=True)
@@ -275,7 +289,7 @@ def download_sample(testing: bool = False):
 
         # Extract
         subprocess.run(cmd_extract, shell=True)
-        extracted_dir = Path(ZTFDATA) / "ztfparsnip" / "BTS_plus_TDE"
+        extracted_dir = Path(ZTFDATA) / "ztfparsnip" / zipfile_name
 
         # Validate
         nr_files = len([x for x in extracted_dir.glob("*") if x.is_file()])
@@ -285,7 +299,7 @@ def download_sample(testing: bool = False):
             subprocess.run(cmd_remove_zip, shell=True)
         else:
             raise ValueError(
-                "Something went wrong with your download. Remove 'ZTFDATA/ztfparsnip/BTS_plus_TDE' and try again"
+                f"Something went wrong with your download. Remove 'ZTFDATA/ztfparsnip/{zipfile_name}' and try again"
             )
 
     else:
