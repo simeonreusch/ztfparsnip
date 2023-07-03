@@ -46,6 +46,7 @@ class Noisify(object):
         sig_noise_cut: bool = True,
         SN_threshold: float = 5.0,
         n_det_threshold: int = 5,
+        detection_scale: float = 0.5,
         subsampling_rate: float = 1.0,
         jd_scatter_sigma: float = 0.0,
     ):
@@ -62,9 +63,11 @@ class Noisify(object):
         self.sig_noise_cut = sig_noise_cut
         self.SN_threshold = SN_threshold
         self.n_det_threshold = n_det_threshold
+        self.detection_scale = detection_scale
         self.subsampling_rate = subsampling_rate
         self.jd_scatter_sigma = jd_scatter_sigma
         self.rng = default_rng(seed=self.seed)
+        #self.z_valid_list = self.rng.uniform(float(self.header["bts_z"]), float(self.header["bts_z"])+self.delta_z, size=10000)
         self.z_list = self.rng.power(4, 10000) * (
             float(self.header["bts_z"]) + self.delta_z
         )
@@ -100,52 +103,74 @@ class Noisify(object):
                     if delta_m is not None:
                         new_table["magpsf"] = new_table["magpsf"].data + delta_m
                         new_table["flux"] = new_table["flux"].data + delta_f
-                if self.sig_noise_cut:
-                    peak_idx = np.argmax(new_table["flux"])
-                    sig_noise_df = pd.DataFrame(
-                        data={
-                            "SN": np.abs(
-                                np.array(new_table["flux"] / new_table["fluxerr"])
-                            )
-                        }
-                    )
-                    count_sn = sig_noise_df[
-                        sig_noise_df["SN"] > self.SN_threshold
-                    ].count()
-                    if (
-                        new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]
-                    ) > self.SN_threshold:
-                        if count_sn[0] >= self.n_det_threshold:
-                            # Randomly remove datapoints, retaining (subsampling_rate)% of lc
-                            if (
-                                self.subsampling_rate < 1.0
-                                and len(new_table["flux"]) > 10
-                            ):
-                                subsampled_length = int(
-                                    len(new_table["flux"]) * self.subsampling_rate
+                # remove negative flux values
+                neg_mask = new_table["flux"].data > 0.0
+                new_table = new_table[neg_mask]
+                if len(new_table) == 0:
+                    res.append(0)
+                else:
+                    # Add cut on S/N
+                    if self.sig_noise_cut:
+                        peak_idx = np.argmax(new_table["flux"])
+                        sig_noise_df = pd.DataFrame(
+                            data={
+                                "SN": np.abs(
+                                    np.array(new_table["flux"] / new_table["fluxerr"])
                                 )
-                                indices_to_keep = self.rng.choice(
-                                    len(new_table["flux"]),
-                                    subsampled_length,
-                                    replace=False,
-                                )
-
-                                aug_table = new_table[indices_to_keep]
-                                if self.jd_scatter_sigma > 0:
-                                    aug_table = self.scatter_jd(
-                                        table=aug_table, sigma=self.jd_scatter_sigma
+                            }
+                        )
+                        count_sn = sig_noise_df[
+                            sig_noise_df["SN"] > self.SN_threshold
+                        ].count()
+                        if (
+                            new_table["flux"][peak_idx] / new_table["fluxerr"][peak_idx]
+                        ) > self.SN_threshold:
+                            if count_sn[0] >= self.n_det_threshold:
+                                # Remove data points according to density distribution
+                                new_idx = self.drop_points(new_table['jd'], new_table['band'], cadence_scale = self.detection_scale)
+                                aug_table = new_table[new_idx]
+                                # Then randomly remove datapoints, retaining (subsampling_rate)% of lc
+                                if (
+                                    self.subsampling_rate < 1.0
+                                    and len(aug_table["flux"]) > 10
+                                ):
+                                    '''
+                                    if self.multiplier < 10.:
+                                        subsampling_val = 0.9
+                                    elif self.multiplier < 50.:
+                                        subsampling_val = 0.8
+                                    elif self.multiplier < 300.:
+                                        subsampling_val = 0.7
+                                    else:
+                                        subsampling_val = self.subsampling_rate
+                                    subsampled_length = int(
+                                        len(new_table["flux"]) * subsampling_val
                                     )
-                                noisy_lcs.append(aug_table)
+                                    '''
+                                    subsampled_length = int(
+                                        len(aug_table["flux"]) * self.subsampling_rate
+                                    )
+                                    indices_to_keep = self.rng.choice(
+                                        len(aug_table["flux"]),
+                                        subsampled_length,
+                                        replace=False,
+                                    )
+                                    aug_table = aug_table[indices_to_keep]
+                                    if self.jd_scatter_sigma > 0:
+                                        aug_table = self.scatter_jd(
+                                            table=aug_table, sigma=self.jd_scatter_sigma
+                                        )
+                                    noisy_lcs.append(aug_table)
+                                else:
+                                    noisy_lcs.append(aug_table)
+                                res.append(1)
                             else:
-                                noisy_lcs.append(new_table)
-                            res.append(1)
+                                res.append(0)
                         else:
                             res.append(0)
                     else:
-                        res.append(0)
-                else:
-                    res.append(1)
-                    noisy_lcs.append(new_table)
+                        res.append(1)
+                        noisy_lcs.append(new_table)
             else:
                 res.append(0)
             """
@@ -160,6 +185,10 @@ class Noisify(object):
                     )
                     print(table.meta["type"])
                     break
+
+        # Augment original BTS table: remove data points according to density distribution
+        idx = self.drop_points(table['jd'], table['band'], cadence_scale = self.detection_scale)
+        table = table[idx]
 
         if self.output_format == "parsnip":
             table.keep_columns(
@@ -264,14 +293,12 @@ class Noisify(object):
         for fid, fname in zip([1, 2, 3], ["ztfg", "ztfr", "ztfi"]):
             phot_tab["band"][phot_tab["fid"] == fid] = fname
 
+        # Add 0.03 error floor to the errors in mag!! @Melissa Amenouche
+        #phot_tab["sigmapsf"] = np.sqrt(phot_tab["sigmapsf"]**2 + 0.03**2)
+
         phot_tab["flux"] = 10 ** (-(phot_tab["magpsf"] - 25) / 2.5)
         phot_tab["fluxerr"] = np.abs(
             phot_tab["flux"] * (-phot_tab["sigmapsf"] / 2.5 * np.log(10))
-        )
-        # Add 7% to the errors in flux!!
-        phot_tab["fluxerr"] = phot_tab["fluxerr"] * 1.07
-        phot_tab["sigmapsf"] = np.abs(
-            (2.5 * np.log(10)) * (phot_tab["fluxerr"] / phot_tab["flux"])
         )
         phot_tab["zp"] = 25
         phot_tab["zpsys"] = "ab"
@@ -286,35 +313,41 @@ class Noisify(object):
         this_lc = this_lc[this_lc["flux"] > 0.0]
         if len(this_lc) == 0:
             return Table()
-        mag = this_lc["magpsf"]
-        magzp_orig = this_lc["magzp_orig"]
-        magzpunc_orig = this_lc["magzpunc_orig"]
-        fid = this_lc["fid"]
-        flux_old = this_lc["flux"]
-        fluxerr_old = this_lc["fluxerr"]
+        flux_obs = this_lc["flux"]
+        fluxerr_obs = this_lc["fluxerr"]
         truez = float(this_lc.meta["bts_z"])
         zp = this_lc["zp"]
 
         new_z = self.rng.choice(self.z_valid_list)
 
-        delta_m = cosmo.distmod(new_z) - cosmo.distmod(truez)
-        flux_new = 10 ** ((25 - mag - delta_m.value) / 2.5)
-        scale = (
+        d_scale = (
             cosmo.luminosity_distance(truez) ** 2
             / cosmo.luminosity_distance(new_z) ** 2
-        )
-        df_f_old = fluxerr_old / flux_old
-        df_f_new = 1 / scale * df_f_old
+        ).value
 
-        flux_obs = flux_new + self.rng.normal(scale=np.sqrt(flux_new))
-        fluxerr_obs = flux_new * df_f_new
+        mask_signoise = flux_obs/fluxerr_obs < 5.
+        flux_true = flux_obs - self.rng.normal(scale=fluxerr_obs) # get true initial flux (removing scatter)
+        flux_true[mask_signoise] = flux_obs[mask_signoise] #but don't remove if S/N is poor
 
-        mag_new = self.flux_to_mag(flux_obs.value, zp).value
-        magerr_new = np.abs((2.5 * np.log(10)) * (fluxerr_obs / flux_obs)).value
+        negflux = flux_true<0.0 # set minimum flux
+        flux_true[negflux] = 0.01
+
+        flux_z = flux_true * d_scale
+        ef = 0.5425067
+        eb = 5.36951258
+        err_scale = (1 + ef**2)/eb**2
+        fluxerr_z_obs = np.sqrt((d_scale/(1+1/(flux_true*err_scale) ) + 1/(1+err_scale*flux_true))) * fluxerr_obs
+        flux_z_obs = flux_z + self.rng.normal(scale=fluxerr_z_obs)
+
+        zp_new = this_lc["zp"].data
+        mag_new = self.flux_to_mag(flux_z_obs, zp_new)
+        magerr_new = np.abs((2.5 * np.log(10)) * (fluxerr_z_obs / flux_z_obs))
         jd_new = this_lc["jd"].data
         band_new = this_lc["band"].data
-        zp_new = this_lc["zp"].data
         zpsys_new = this_lc["zpsys"].data
+        magzp_orig = this_lc["magzp_orig"].data
+        magzpunc_orig = this_lc["magzpunc_orig"].data
+        fid_new = this_lc["fid"].data
 
         if len(mag_new) > 0:
             phot = {
@@ -323,10 +356,10 @@ class Noisify(object):
                 "sigmapsf": magerr_new,
                 "magzp_orig": magzp_orig,
                 "magzpunc_orig": magzpunc_orig,
-                "fid": fid,
+                "fid": fid_new,
                 "band": band_new,
-                "flux": flux_obs,
-                "fluxerr": fluxerr_obs,
+                "flux": flux_z_obs,
+                "fluxerr": fluxerr_z_obs,
                 "zp": zp_new,
                 "zpsys": zpsys_new,
             }
@@ -386,6 +419,30 @@ class Noisify(object):
         table["jd"] = jd_scatter
 
         return table
+    
+    def drop_points(self, x, band, time_period: float = 5.0, cadence_scale: float = 0.5):
+        # Split the data based on 'band'
+        band_indices = {'r': (band == 'ztfr'), 'g': (band == 'ztfg'), 'i': (band == 'ztfi')}
+        # Initialise an empty list to store retained indices for each band
+        retained_indices_list = []
+        for band_label, indices in band_indices.items():
+            # Filter x based on the current band
+            band_x = x[indices]
+            # Calculate the number of detections within each time period for the current band
+            num_detections = np.array([sum((band_x >= i - time_period/2) & (band_x < i + time_period/2)) for i in band_x])
+            # Calculate the density of detections for the current band
+            density = num_detections / time_period #len(x)
+            # Drop points randomly based on the probability distribution for the current band
+            random_numbers = self.rng.uniform(0, 1, len(density))
+            retained_indices = [i for i, rand_num in enumerate(random_numbers) if rand_num < cadence_scale/density[i]]
+            # Add the retained indices for the current band to the list
+            retained_indices_list.append(np.where(indices)[0][retained_indices])
+
+        # Combine the retained indices for all bands
+        combined_retained_indices = np.concatenate(retained_indices_list)
+        # Sort the combined retained indices
+        combined_retained_indices = np.sort(combined_retained_indices)
+        return combined_retained_indices
 
     @staticmethod
     def flux_to_mag(flux, zp):

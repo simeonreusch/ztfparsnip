@@ -306,6 +306,7 @@ class CreateLightcurves(object):
         delta_z: float = 0.1,
         SN_threshold: float = 5.0,
         n_det_threshold: int = 5,
+        detection_scale: float = 0.5,
         subsampling_rate: float = 1.0,
         jd_scatter_sigma: float = 0.0,
         n: int | None = None,
@@ -329,6 +330,7 @@ class CreateLightcurves(object):
                     "SN_threshold": SN_threshold,
                     "n_det_threshold": n_det_threshold,
                 },
+                "detection_scale": detection_scale,
                 "subsampling_rate": subsampling_rate,
                 "jd_scatter_sigma": jd_scatter_sigma,
             }
@@ -342,7 +344,8 @@ class CreateLightcurves(object):
                     if c in self.selection.keys():
                         # check if it's a test sample lightcurve
                         if header["name"] in self.test_sample["all"]["ztfids"]:
-                            multiplier = 0
+                            #multiplier = 0
+                            multiplier = self.selection[c]
                             get_test = True
                         else:
                             multiplier = self.selection[c]
@@ -359,21 +362,34 @@ class CreateLightcurves(object):
                             sig_noise_cut=sig_noise_cut,
                             SN_threshold=SN_threshold,
                             n_det_threshold=n_det_threshold,
+                            detection_scale = detection_scale,
                             subsampling_rate=subsampling_rate,
                             jd_scatter_sigma=jd_scatter_sigma,
                             output_format=self.output_format,
                         )
 
                         if get_test:
-                            test_lc, _ = noisify.noisify_lightcurve()
+                            test_lc, noisy_test_lcs = noisify.noisify_lightcurve()
                             if test_lc is not None:
+                                for i, noisy_test_lc in enumerate(noisy_test_lcs):
+                                    noisy_test_lc.meta["name"] = (
+                                        noisy_test_lc.meta["name"] + f"_{i}"
+                                    )
                                 final_lightcurves["bts_test"].append(test_lc)
+                                final_lightcurves["bts_test"].extend(noisy_test_lcs)
                                 if self.output_format == "ztfnuclear":
                                     io.save_csv_with_header(
                                         test_lc,
                                         savedir=self.test_dir,
                                         output_format=self.output_format,
                                     )
+                                    for noisy_test_lc in noisy_test_lcs:
+                                        io.save_csv_with_header(
+                                            noisy_test_lc,
+                                            savedir=self.test_dir,
+                                            output_format=self.output_format,
+                                        )
+                                
 
                         else:
                             bts_lc, noisy_lcs = noisify.noisify_lightcurve()
