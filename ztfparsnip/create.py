@@ -145,7 +145,16 @@ class CreateLightcurves(object):
 
         self.logger.info("Creating noisified training data.")
         self.logger.info(
-            f"\n---------------------------------\nSelected configuration\nweights: {weights_info}\nk correction: {self.k_corr}\ntest fraction: {self.test_fraction}\nseed: {self.seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}\n---------------------------------"
+            f"\n---------------------------------\n"
+            f"Selected configuration"
+            f"\nweights: {weights_info}\n"
+            f"k correction: {self.k_corr}\n"
+            f"test fraction: {self.test_fraction}\n"
+            f"seed: {self.seed}\n"
+            f"output format: {self.output_format}\n"
+            f"training data output directory: {self.train_dir}\n"
+            f"plot directory: {self.plot_dir}\n"
+            f"---------------------------------"
         )
 
     def get_simple_class(self, classkey: str, bts_class: str) -> str:
