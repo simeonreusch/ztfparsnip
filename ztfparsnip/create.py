@@ -103,15 +103,18 @@ class CreateLightcurves(object):
                 for x in self.lc_dir.glob("*"):
                     if f"{x.name}".split("_")[0] in self.config["test_lightcurves"]:
                         nr_files += 1
+
             if (
                 (self.testing == False and bl_corrected == True and nr_files < 6841)
-                or (self.testing == False and bl_corrected == False and nr_files < 7131)
+                or (self.testing == False and bl_corrected == False and nr_files < 7130)
                 or (self.testing and nr_files < 10)
             ):
                 self.logger.info("Downloading sample")
                 io.download_sample(testing=testing, bl_corrected=bl_corrected)
 
-        self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir, testing=self.testing)
+        self.ztfids = io.get_all_ztfids(
+            lc_dir=self.lc_dir, testing=self.testing, bl_corrected=bl_corrected
+        )
 
         classkeys_available = [
             key

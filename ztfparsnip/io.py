@@ -2,6 +2,7 @@
 # Author: Simeon Reusch (simeon.reusch@desy.de)
 # License: BSD-3-Clause
 
+import glob
 import logging
 import os
 import random
@@ -33,7 +34,7 @@ if ztfdir := os.getenv("ZTFDATA"):
         "https://syncandshare.desy.de/index.php/s/bnGQYb9goiHi6bH/download"
     )
     DOWNLOAD_URL_SAMPLE_NOBL = Path(
-        "https://syncandshare.desy.de/index.php/s/etCZ8tXya2poKeX/download"
+        "https://syncandshare.desy.de/index.php/s/co6B4kNGejcpDmT/download"
     )
 
     for d in [BASE_DIR, BTS_LC_BASELINE_DIR, BTS_LC_DIR, TRAIN_DATA, PLOT_DIR]:
@@ -64,13 +65,19 @@ def add_mag(df: pd.DataFrame) -> pd.DataFrame:
     Add mag and magerr
     """
     # remove negative flux rows
-    df.query("ampl_corr>0", inplace=True)
+    if "ampl_corr" in list(df.keys()):
+        ampl_col = "ampl_corr"
+        ampl_err_col = "ampl_err_corr"
+    else:
+        ampl_col = "ampl"
+        ampl_err_col = "ampl.err"
+    df.query(f"{ampl_col}>0", inplace=True)
 
     F0 = 10 ** (df.magzp / 2.5)
     F0_err = F0 / 2.5 * np.log(10) * df.magzpunc
-    flux = df.ampl_corr / F0 * 3630.78
+    flux = df[ampl_col] / F0 * 3630.78
     flux_err = (
-        np.sqrt((df.ampl_err_corr / F0) ** 2 + (df.ampl_corr * F0_err / F0**2) ** 2)
+        np.sqrt((df[ampl_err_col] / F0) ** 2 + (df[ampl_col] * F0_err / F0**2) ** 2)
         * 3630.78
     )
 
@@ -111,7 +118,8 @@ def get_ztfid_dataframe(ztfid: str, lc_dir: Path | None = None) -> pd.DataFrame 
     if is_valid_ztfid(ztfid):
         if lc_dir is None:
             lc_dir = BTS_LC_BASELINE_DIR
-        filepath = lc_dir / f"{ztfid}_bl.csv"
+
+        filepath = glob.glob(str(lc_dir / f"{ztfid}*"))[0]
 
         try:
             df = pd.read_csv(filepath, comment="#", index_col=0)
@@ -132,7 +140,8 @@ def get_ztfid_header(ztfid: str, lc_dir: Path | None = None) -> dict | None:
     if is_valid_ztfid(ztfid):
         if lc_dir is None:
             lc_dir = BTS_LC_BASELINE_DIR
-        filepath = lc_dir / f"{ztfid}_bl.csv"
+
+        filepath = glob.glob(str(lc_dir / f"{ztfid}*"))[0]
 
         try:
             with open(filepath, "r") as input_file:
@@ -170,7 +179,9 @@ def get_ztfid_header(ztfid: str, lc_dir: Path | None = None) -> dict | None:
         raise ValueError(f"{ztfid} is not a valid ZTF ID")
 
 
-def save_csv_with_header(lc, savedir: Path, output_format: str = "ztfnuclear"):
+def save_csv_with_header(
+    lc, savedir: Path, output_format: str = "ztfnuclear", bl_corrected: bool = True
+):
     """
     Generate a string of the header from a dict, meant to be written to a csv file. Save the lightcurve with the header info as csv
     """
@@ -193,8 +204,12 @@ def save_csv_with_header(lc, savedir: Path, output_format: str = "ztfnuclear"):
         del lc["jd"]
 
         lc.rename_column("zp", "magzp")
-        lc.rename_column("flux", "ampl_corr")
-        lc.rename_column("fluxerr", "ampl_err_corr")
+        if bl_corrected:
+            lc.rename_column("flux", "ampl_corr")
+            lc.rename_column("fluxerr", "ampl_err_corr")
+        else:
+            lc.rename_column("flux", "ampl")
+            lc.rename_column("fluxerr", "ampl.err")
 
     filename = f"{lc_id}.csv"
 
@@ -223,12 +238,17 @@ def short_id():
     return "".join(random.choices(alphabet, k=5))
 
 
-def get_all_ztfids(lc_dir: Path | None = None, testing: bool = False) -> List[str]:
+def get_all_ztfids(
+    lc_dir: Path | None = None, testing: bool = False, bl_corrected: bool = True
+) -> List[str]:
     """
     Checks the lightcurve folder and gets all ztfids
     """
     if lc_dir is None:
-        lc_dir = BTS_LC_BASELINE_DIR
+        if bl_corrected:
+            lc_dir = BTS_LC_BASELINE_DIR
+        else:
+            lc_dir = BTS_LC_DIR
 
     ztfids = []
     for name in os.listdir(lc_dir):
@@ -293,7 +313,8 @@ def download_sample(testing: bool = False, bl_corrected: bool = True):
 
         # Validate
         nr_files = len([x for x in extracted_dir.glob("*") if x.is_file()])
-        if nr_files == 6841 and testing:
+
+        if nr_files in [6841, 7130] and testing:
             subprocess.run(cmd_remove_zip, shell=True)
         elif nr_files == 10 and testing:
             subprocess.run(cmd_remove_zip, shell=True)
