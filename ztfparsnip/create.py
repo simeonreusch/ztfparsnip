@@ -80,14 +80,19 @@ class CreateLightcurves(object):
         if isinstance(self.plot_dir, str):
             self.plot_dir = Path(self.plot_dir)
 
-        if test_dir is None:
-            self.test_dir = self.train_dir.resolve().parent / "test"
+        if self.test_fraction > 0:
+            if test_dir is None:
+                self.test_dir = self.train_dir.resolve().parent / "test"
+            else:
+                self.test_dir = Path(test_dir)
+            self.test_dir.mkdir(exist_ok=True, parents=True)
         else:
-            self.test_dir = Path(test_dir)
+            self.test_dir = (
+                f"not needed (you chose a test fraction of {self.test_fraction})"
+            )
 
-        for p in [self.train_dir, self.plot_dir, self.test_dir]:
-            if not p.exists():
-                os.makedirs(p)
+        for p in [self.train_dir, self.plot_dir]:
+            p.mkdir(exist_ok=True, parents=True)
 
         self.config = io.load_config()
 
@@ -153,9 +158,11 @@ class CreateLightcurves(object):
             f"seed: {self.seed}\n"
             f"output format: {self.output_format}\n"
             f"training data output directory: {self.train_dir}\n"
+            f"test data output directory: {self.test_dir}\n"
             f"plot directory: {self.plot_dir}\n"
             f"---------------------------------"
         )
+        quit()
 
     def get_simple_class(self, classkey: str, bts_class: str) -> str:
         """
