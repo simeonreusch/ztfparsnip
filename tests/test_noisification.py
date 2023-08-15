@@ -57,25 +57,15 @@ class TestNoisification(unittest.TestCase):
         sample.create(plot_debug=True)
 
         available = [x for x in sample.test_dir.glob("*") if x.is_file()]
-        print("------------")
-        print("------------")
-        print("------------")
-        print("------------")
-        print("------------")
-        print("------------")
-        print("------------")
-        print(available)
-        print("------------")
-        print("------------")
-        print("------------")
-        print("------------")
-        print("------------")
 
-        for name in ["ZTF19aapreis", "ZTF20acvmzfv"]:
+        for entry in available:
+            print(entry)
+
+        for name in ["ZTF19aapreis", "ZTF18aamvfeb"]:
             path = sample.test_dir / f"{name}.csv"
             pd.read_csv(path, comment="#")
 
-        infile_noisified = sample.train_dir / "ZTF18aavvnzu_3.csv"
+        infile_noisified = sample.train_dir / "ZTF18aamvfeb_1.csv"
         df = pd.read_csv(infile_noisified, comment="#", index_col=0)
         df.sort_values(by=["obsmjd"], inplace=True)
         mags = df.magpsf.values
