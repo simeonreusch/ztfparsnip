@@ -68,7 +68,6 @@ class TestNoisification(unittest.TestCase):
         infile_noisified = sample.train_dir / "ZTF20acvmzfv_0.csv"
         df = pd.read_csv(infile_noisified, comment="#", index_col=0)
         df.sort_values(by=["obsmjd"], inplace=True)
-        df.to_csv("/Users/simeon/Desktop/test.csv")
         mags = df.magpsf.values
         reference_mags = [
             21.5554662912919,
