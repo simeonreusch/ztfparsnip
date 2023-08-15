@@ -9,6 +9,7 @@ import pandas as pd
 from ztfparsnip.create import CreateLightcurves
 
 logging.getLogger("ztfparsnip.create").setLevel(logging.DEBUG)
+logging.getLogger("ztfparsnip.io").setLevel(logging.DEBUG)
 
 
 class TestNoisification(unittest.TestCase):
