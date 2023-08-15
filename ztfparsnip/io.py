@@ -2,6 +2,7 @@
 # Author: Simeon Reusch (simeon.reusch@desy.de)
 # License: BSD-3-Clause
 
+import glob
 import logging
 import os
 import random
@@ -22,6 +23,7 @@ alphabet = string.ascii_lowercase + string.digits
 if ztfdir := os.getenv("ZTFDATA"):
     BASE_DIR = Path(ztfdir) / "ztfparsnip"
     BTS_LC_BASELINE_DIR = BASE_DIR / "BTS_plus_TDE"
+    BTS_LC_DIR = BASE_DIR / "BTS_plus_TDE_nobl"
     TRAIN_DATA = BASE_DIR / "train"
     PLOT_DIR = BASE_DIR / "plots"
     DOWNLOAD_URL_SAMPLE = Path(
@@ -30,8 +32,11 @@ if ztfdir := os.getenv("ZTFDATA"):
     DOWNLOAD_URL_SAMPLE_TEST = Path(
         "https://syncandshare.desy.de/index.php/s/bnGQYb9goiHi6bH/download"
     )
+    DOWNLOAD_URL_SAMPLE_NOBL = Path(
+        "https://syncandshare.desy.de/index.php/s/co6B4kNGejcpDmT/download"
+    )
 
-    for d in [BASE_DIR, BTS_LC_BASELINE_DIR, TRAIN_DATA, PLOT_DIR]:
+    for d in [BASE_DIR, BTS_LC_BASELINE_DIR, BTS_LC_DIR, TRAIN_DATA, PLOT_DIR]:
         if not d.is_dir():
             os.makedirs(d)
 
@@ -39,7 +44,7 @@ if ztfdir := os.getenv("ZTFDATA"):
 
 else:
     raise ValueError(
-        "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See github.com/mickaelrigault/ztfquery"
+        "You have to set the ZTFDATA environment variable in your .bashrc or .zshrc. See https://github.com/mickaelrigault/ztfquery"
     )
 
 
@@ -59,13 +64,19 @@ def add_mag(df: pd.DataFrame) -> pd.DataFrame:
     Add mag and magerr
     """
     # remove negative flux rows
-    df.query("ampl_corr>0", inplace=True)
+    if "ampl_corr" in list(df.keys()):
+        ampl_col = "ampl_corr"
+        ampl_err_col = "ampl_err_corr"
+    else:
+        ampl_col = "ampl"
+        ampl_err_col = "ampl.err"
+    df.query(f"{ampl_col}>0", inplace=True)
 
     F0 = 10 ** (df.magzp / 2.5)
     F0_err = F0 / 2.5 * np.log(10) * df.magzpunc
-    flux = df.ampl_corr / F0 * 3630.78
+    flux = df[ampl_col] / F0 * 3630.78
     flux_err = (
-        np.sqrt((df.ampl_err_corr / F0) ** 2 + (df.ampl_corr * F0_err / F0**2) ** 2)
+        np.sqrt((df[ampl_err_col] / F0) ** 2 + (df[ampl_col] * F0_err / F0**2) ** 2)
         * 3630.78
     )
 
@@ -106,7 +117,8 @@ def get_ztfid_dataframe(ztfid: str, lc_dir: Path | None = None) -> pd.DataFrame 
     if is_valid_ztfid(ztfid):
         if lc_dir is None:
             lc_dir = BTS_LC_BASELINE_DIR
-        filepath = lc_dir / f"{ztfid}_bl.csv"
+
+        filepath = glob.glob(str(lc_dir / f"{ztfid}*"))[0]
 
         try:
             df = pd.read_csv(filepath, comment="#", index_col=0)
@@ -127,7 +139,8 @@ def get_ztfid_header(ztfid: str, lc_dir: Path | None = None) -> dict | None:
     if is_valid_ztfid(ztfid):
         if lc_dir is None:
             lc_dir = BTS_LC_BASELINE_DIR
-        filepath = lc_dir / f"{ztfid}_bl.csv"
+
+        filepath = glob.glob(str(lc_dir / f"{ztfid}*"))[0]
 
         try:
             with open(filepath, "r") as input_file:
@@ -165,7 +178,9 @@ def get_ztfid_header(ztfid: str, lc_dir: Path | None = None) -> dict | None:
         raise ValueError(f"{ztfid} is not a valid ZTF ID")
 
 
-def save_csv_with_header(lc, savedir: Path, output_format: str = "ztfnuclear"):
+def save_csv_with_header(
+    lc, savedir: Path, output_format: str = "ztfnuclear", bl_corrected: bool = True
+):
     """
     Generate a string of the header from a dict, meant to be written to a csv file. Save the lightcurve with the header info as csv
     """
@@ -188,8 +203,12 @@ def save_csv_with_header(lc, savedir: Path, output_format: str = "ztfnuclear"):
         del lc["jd"]
 
         lc.rename_column("zp", "magzp")
-        lc.rename_column("flux", "ampl_corr")
-        lc.rename_column("fluxerr", "ampl_err_corr")
+        if bl_corrected:
+            lc.rename_column("flux", "ampl_corr")
+            lc.rename_column("fluxerr", "ampl_err_corr")
+        else:
+            lc.rename_column("flux", "ampl")
+            lc.rename_column("fluxerr", "ampl.err")
 
     filename = f"{lc_id}.csv"
 
@@ -218,12 +237,17 @@ def short_id():
     return "".join(random.choices(alphabet, k=5))
 
 
-def get_all_ztfids(lc_dir: Path | None = None, testing: bool = False) -> List[str]:
+def get_all_ztfids(
+    lc_dir: Path | None = None, testing: bool = False, bl_corrected: bool = True
+) -> List[str]:
     """
     Checks the lightcurve folder and gets all ztfids
     """
     if lc_dir is None:
-        lc_dir = BTS_LC_BASELINE_DIR
+        if bl_corrected:
+            lc_dir = BTS_LC_BASELINE_DIR
+        else:
+            lc_dir = BTS_LC_DIR
 
     ztfids = []
     for name in os.listdir(lc_dir):
@@ -255,7 +279,7 @@ def load_config(config_path: Path | None = None) -> dict:
     return config
 
 
-def download_sample(testing: bool = False):
+def download_sample(testing: bool = False, bl_corrected: bool = True):
     """
     Download the BTS + TDE lightcurves from the DESY Nextcloud
     """
@@ -263,11 +287,20 @@ def download_sample(testing: bool = False):
         if testing:
             cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE_TEST}"
         else:
-            cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE}"
+            if bl_corrected:
+                cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE}"
+            else:
+                cmd_dl = f"curl --create-dirs -J -O --output-dir {ZTFDATA}/ztfparsnip {DOWNLOAD_URL_SAMPLE_NOBL}"
+
+        if bl_corrected:
+            zipfile_name = "BTS_plus_TDE"
+        else:
+            zipfile_name = "BTS_plus_TDE_nobl"
+
         cmd_extract = (
-            f"unzip {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip -d {ZTFDATA}/ztfparsnip"
+            f"unzip {ZTFDATA}/ztfparsnip/{zipfile_name}.zip -d {ZTFDATA}/ztfparsnip"
         )
-        cmd_remove_zip = f"rm {ZTFDATA}/ztfparsnip/BTS_plus_TDE.zip"
+        cmd_remove_zip = f"rm {ZTFDATA}/ztfparsnip/{zipfile_name}.zip"
 
         # Download
         subprocess.run(cmd_dl, shell=True)
@@ -275,18 +308,21 @@ def download_sample(testing: bool = False):
 
         # Extract
         subprocess.run(cmd_extract, shell=True)
-        extracted_dir = Path(ZTFDATA) / "ztfparsnip" / "BTS_plus_TDE"
+        extracted_dir = Path(ZTFDATA) / "ztfparsnip" / zipfile_name
 
         # Validate
         nr_files = len([x for x in extracted_dir.glob("*") if x.is_file()])
-        if nr_files == 6841 and testing:
+
+        if nr_files in [6841, 7130] and testing:
             subprocess.run(cmd_remove_zip, shell=True)
         elif nr_files == 10 and testing:
             subprocess.run(cmd_remove_zip, shell=True)
         else:
             raise ValueError(
-                "Something went wrong with your download. Remove 'ZTFDATA/ztfparsnip/BTS_plus_TDE' and try again"
+                f"Something went wrong with your download. Remove 'ZTFDATA/ztfparsnip/{zipfile_name}' and try again"
             )
+
+        logger.info(f"{nr_files} files found in dir {extracted_dir}")
 
     else:
         raise ValueError(

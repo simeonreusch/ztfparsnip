@@ -30,6 +30,7 @@ class CreateLightcurves(object):
         k_corr: bool = True,
         seed: int | None = None,
         bts_baseline_dir: Path = io.BTS_LC_BASELINE_DIR,
+        bl_corrected: bool = True,
         name: str = "train",
         reprocess_headers: bool = False,
         output_format: str = "parsnip",
@@ -53,7 +54,11 @@ class CreateLightcurves(object):
         self.plot_magdist = plot_magdist
         self.train_dir = train_dir
         self.plot_dir = plot_dir
-        self.lc_dir = bts_baseline_dir
+        if bl_corrected:
+            self.lc_dir = bts_baseline_dir
+        else:
+            self.lc_dir = io.BTS_LC_DIR
+
         self.testing = testing
 
         self.rng = default_rng(seed=self.seed)
@@ -75,22 +80,27 @@ class CreateLightcurves(object):
         if isinstance(self.plot_dir, str):
             self.plot_dir = Path(self.plot_dir)
 
-        if test_dir is None:
-            self.test_dir = self.train_dir.resolve().parent / "test"
-        else:
-            self.test_dir = Path(test_dir)
+        self.test_dir: Path | None = None
 
-        for p in [self.train_dir, self.plot_dir, self.test_dir]:
-            if not p.exists():
-                os.makedirs(p)
+        if self.test_fraction > 0:
+            if test_dir is None:
+                self.test_dir = self.train_dir.resolve().parent / "test"
+            else:
+                self.test_dir = Path(test_dir)
+            self.test_dir.mkdir(exist_ok=True, parents=True)
+        else:
+            self.test_dir = None
+
+        for p in [self.train_dir, self.plot_dir]:
+            p.mkdir(exist_ok=True, parents=True)
 
         self.config = io.load_config()
 
         """
         if we are in the default sample dir, check if files are there,
-        check if files are there an download if not
+        check if files are there and download if not
         """
-        if self.lc_dir == io.BTS_LC_BASELINE_DIR:
+        if self.lc_dir in [io.BTS_LC_BASELINE_DIR, io.BTS_LC_DIR]:
             if not self.testing:
                 nr_files = len([x for x in self.lc_dir.glob("*") if x.is_file()])
             else:
@@ -98,13 +108,18 @@ class CreateLightcurves(object):
                 for x in self.lc_dir.glob("*"):
                     if f"{x.name}".split("_")[0] in self.config["test_lightcurves"]:
                         nr_files += 1
-            if (self.testing == False and nr_files < 6841) or (
-                self.testing and nr_files < 10
+
+            if (
+                (self.testing == False and bl_corrected == True and nr_files < 6841)
+                or (self.testing == False and bl_corrected == False and nr_files < 7130)
+                or (self.testing and nr_files < 10)
             ):
                 self.logger.info("Downloading sample")
-                io.download_sample(testing=testing)
+                io.download_sample(testing=testing, bl_corrected=bl_corrected)
 
-        self.ztfids = io.get_all_ztfids(lc_dir=self.lc_dir, testing=self.testing)
+        self.ztfids = io.get_all_ztfids(
+            lc_dir=self.lc_dir, testing=self.testing, bl_corrected=bl_corrected
+        )
 
         classkeys_available = [
             key
@@ -135,7 +150,17 @@ class CreateLightcurves(object):
 
         self.logger.info("Creating noisified training data.")
         self.logger.info(
-            f"\n---------------------------------\nSelected configuration\nweights: {weights_info}\nk correction: {self.k_corr}\ntest fraction: {self.test_fraction}\nseed: {self.seed}\noutput format: {self.output_format}\ntraining data output directory: {self.train_dir}\n---------------------------------"
+            f"\n---------------------------------\n"
+            f"Selected configuration"
+            f"\nweights: {weights_info}\n"
+            f"k correction: {self.k_corr}\n"
+            f"test fraction: {self.test_fraction}\n"
+            f"seed: {self.seed}\n"
+            f"output format: {self.output_format}\n"
+            f"training data output directory: {self.train_dir}\n"
+            f"test data output directory: {self.test_dir}\n"
+            f"plot directory: {self.plot_dir}\n"
+            f"---------------------------------"
         )
 
     def get_simple_class(self, classkey: str, bts_class: str) -> str:
@@ -249,6 +274,7 @@ class CreateLightcurves(object):
         for k, v in classes_available.items():
             availability += f"{k}: {classes_available[k]['entries']}\n"
             available_dict.update({k: classes_available[k]["entries"]})
+
         self.logger.info(
             f"\n---------------------------------\nLightcurves available:\n{availability}---------------------------------"
         )
@@ -306,6 +332,7 @@ class CreateLightcurves(object):
         delta_z: float = 0.1,
         SN_threshold: float = 5.0,
         n_det_threshold: int = 5,
+        detection_scale: float = 0.5,
         subsampling_rate: float = 1.0,
         jd_scatter_sigma: float = 0.0,
         n: int | None = None,
@@ -329,6 +356,7 @@ class CreateLightcurves(object):
                     "SN_threshold": SN_threshold,
                     "n_det_threshold": n_det_threshold,
                 },
+                "detection_scale": detection_scale,
                 "subsampling_rate": subsampling_rate,
                 "jd_scatter_sigma": jd_scatter_sigma,
             }
@@ -342,7 +370,8 @@ class CreateLightcurves(object):
                     if c in self.selection.keys():
                         # check if it's a test sample lightcurve
                         if header["name"] in self.test_sample["all"]["ztfids"]:
-                            multiplier = 0
+                            # multiplier = 0
+                            multiplier = self.selection[c]
                             get_test = True
                         else:
                             multiplier = self.selection[c]
@@ -359,21 +388,36 @@ class CreateLightcurves(object):
                             sig_noise_cut=sig_noise_cut,
                             SN_threshold=SN_threshold,
                             n_det_threshold=n_det_threshold,
+                            detection_scale=detection_scale,
                             subsampling_rate=subsampling_rate,
                             jd_scatter_sigma=jd_scatter_sigma,
                             output_format=self.output_format,
                         )
 
                         if get_test:
-                            test_lc, _ = noisify.noisify_lightcurve()
+                            test_lc, noisy_test_lcs = noisify.noisify_lightcurve()
                             if test_lc is not None:
+                                for i, noisy_test_lc in enumerate(noisy_test_lcs):
+                                    noisy_test_lc.meta["name"] = (
+                                        noisy_test_lc.meta["name"] + f"_{i}"
+                                    )
                                 final_lightcurves["bts_test"].append(test_lc)
-                                if self.output_format == "ztfnuclear":
+                                final_lightcurves["bts_test"].extend(noisy_test_lcs)
+                                if (
+                                    self.output_format == "ztfnuclear"
+                                    and self.test_dir is not None
+                                ):
                                     io.save_csv_with_header(
                                         test_lc,
                                         savedir=self.test_dir,
                                         output_format=self.output_format,
                                     )
+                                    for noisy_test_lc in noisy_test_lcs:
+                                        io.save_csv_with_header(
+                                            noisy_test_lc,
+                                            savedir=self.test_dir,
+                                            output_format=self.output_format,
+                                        )
 
                         else:
                             bts_lc, noisy_lcs = noisify.noisify_lightcurve()
@@ -456,7 +500,7 @@ class CreateLightcurves(object):
             # Save h5 files
             for k, v in final_lightcurves.items():
                 if len(v) > 0:
-                    if k == "bts_test":
+                    if k == "bts_test" and self.test_dir is not None:
                         output_dir = self.test_dir
                     else:
                         output_dir = self.train_dir
