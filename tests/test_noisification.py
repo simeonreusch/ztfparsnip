@@ -5,7 +5,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 from ztfparsnip.create import CreateLightcurves
 
 logging.getLogger("ztfparsnip.create").setLevel(logging.DEBUG)
@@ -65,9 +64,15 @@ class TestNoisification(unittest.TestCase):
             path = sample.test_dir / f"{name}.csv"
             pd.read_csv(path, comment="#")
 
+        print("---------")
+        for entry in [x for x in sample.train_dir.glob("*") if x.is_file()]:
+            print(entry)
+        print("---------")
+
         infile_noisified = sample.train_dir / "ZTF20acvmzfv_0.csv"
         df = pd.read_csv(infile_noisified, comment="#", index_col=0)
         df.sort_values(by=["obsmjd"], inplace=True)
+        df.to_csv("/Users/simeon/Desktop/test.csv")
         mags = df.magpsf.values
         reference_mags = [
             21.5554662912919,
