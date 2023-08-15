@@ -322,7 +322,9 @@ def download_sample(testing: bool = False, bl_corrected: bool = True):
                 f"Something went wrong with your download. Remove 'ZTFDATA/ztfparsnip/{zipfile_name}' and try again"
             )
 
-        logger.info(f"{nr_files} found in dir")
+        logger.info(f"{nr_files} files found in dir")
+        for item in [x for x in extracted_dir.glob("*") if x.is_file()]:
+            logger.info(item)
 
     else:
         raise ValueError(
