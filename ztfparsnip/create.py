@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt  # type:ignore
 import numpy
 from numpy.random import default_rng
 from tqdm import tqdm
+
 from ztfparsnip import io, plot
 from ztfparsnip.noisify import Noisify
 
@@ -98,7 +99,7 @@ class CreateLightcurves(object):
 
         """
         if we are in the default sample dir, check if files are there,
-        check if files are there an download if not
+        check if files are there and download if not
         """
         if self.lc_dir in [io.BTS_LC_BASELINE_DIR, io.BTS_LC_DIR]:
             if not self.testing:

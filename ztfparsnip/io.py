@@ -323,8 +323,6 @@ def download_sample(testing: bool = False, bl_corrected: bool = True):
             )
 
         logger.info(f"{nr_files} files found in dir {extracted_dir}")
-        for item in [x for x in extracted_dir.glob("*") if x.is_file()]:
-            logger.info(item)
 
     else:
         raise ValueError(

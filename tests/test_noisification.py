@@ -56,6 +56,21 @@ class TestNoisification(unittest.TestCase):
         sample.select()
         sample.create(plot_debug=True)
 
+        available = [x for x in sample.test_dir.glob("*") if x.is_file()]
+        print("------------")
+        print("------------")
+        print("------------")
+        print("------------")
+        print("------------")
+        print("------------")
+        print("------------")
+        print(available)
+        print("------------")
+        print("------------")
+        print("------------")
+        print("------------")
+        print("------------")
+
         for name in ["ZTF19aapreis", "ZTF20acvmzfv"]:
             path = sample.test_dir / f"{name}.csv"
             pd.read_csv(path, comment="#")
