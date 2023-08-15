@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from ztfparsnip.create import CreateLightcurves
 
 logging.getLogger("ztfparsnip.create").setLevel(logging.DEBUG)
@@ -55,7 +56,7 @@ class TestNoisification(unittest.TestCase):
         sample.create(plot_debug=True)
 
         for name in ["ZTF19aapreis", "ZTF20acvmzfv"]:
-            path = sample.test_dir / f"{name}.csv"
+            path = sample.test_dir / f"{name}_bl.csv"
             pd.read_csv(path, comment="#")
 
         infile_noisified = sample.train_dir / "ZTF18aavvnzu_3.csv"
