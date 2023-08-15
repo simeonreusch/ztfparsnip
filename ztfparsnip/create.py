@@ -9,12 +9,11 @@ import os
 from pathlib import Path
 from typing import Any
 
+import lcdata  # type: ignore
+import matplotlib.pyplot as plt  # type:ignore
 import numpy
 from numpy.random import default_rng
 from tqdm import tqdm
-
-import lcdata  # type: ignore
-import matplotlib.pyplot as plt  # type:ignore
 from ztfparsnip import io, plot
 from ztfparsnip.noisify import Noisify
 
@@ -59,6 +58,7 @@ class CreateLightcurves(object):
             self.lc_dir = bts_baseline_dir
         else:
             self.lc_dir = io.BTS_LC_DIR
+
         self.testing = testing
 
         self.rng = default_rng(seed=self.seed)
@@ -162,7 +162,6 @@ class CreateLightcurves(object):
             f"plot directory: {self.plot_dir}\n"
             f"---------------------------------"
         )
-        quit()
 
     def get_simple_class(self, classkey: str, bts_class: str) -> str:
         """
@@ -275,6 +274,7 @@ class CreateLightcurves(object):
         for k, v in classes_available.items():
             availability += f"{k}: {classes_available[k]['entries']}\n"
             available_dict.update({k: classes_available[k]["entries"]})
+
         self.logger.info(
             f"\n---------------------------------\nLightcurves available:\n{availability}---------------------------------"
         )
