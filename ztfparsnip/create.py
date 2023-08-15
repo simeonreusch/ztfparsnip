@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt  # type:ignore
 import numpy
 from numpy.random import default_rng
 from tqdm import tqdm
-
 from ztfparsnip import io, plot
 from ztfparsnip.noisify import Noisify
 
@@ -81,6 +80,8 @@ class CreateLightcurves(object):
         if isinstance(self.plot_dir, str):
             self.plot_dir = Path(self.plot_dir)
 
+        self.test_dir: Path | None = None
+
         if self.test_fraction > 0:
             if test_dir is None:
                 self.test_dir = self.train_dir.resolve().parent / "test"
@@ -88,9 +89,7 @@ class CreateLightcurves(object):
                 self.test_dir = Path(test_dir)
             self.test_dir.mkdir(exist_ok=True, parents=True)
         else:
-            self.test_dir = (
-                f"not needed (you chose a test fraction of {self.test_fraction})"
-            )
+            self.test_dir = None
 
         for p in [self.train_dir, self.plot_dir]:
             p.mkdir(exist_ok=True, parents=True)
@@ -404,7 +403,10 @@ class CreateLightcurves(object):
                                     )
                                 final_lightcurves["bts_test"].append(test_lc)
                                 final_lightcurves["bts_test"].extend(noisy_test_lcs)
-                                if self.output_format == "ztfnuclear":
+                                if (
+                                    self.output_format == "ztfnuclear"
+                                    and self.test_dir is not None
+                                ):
                                     io.save_csv_with_header(
                                         test_lc,
                                         savedir=self.test_dir,
@@ -498,7 +500,7 @@ class CreateLightcurves(object):
             # Save h5 files
             for k, v in final_lightcurves.items():
                 if len(v) > 0:
-                    if k == "bts_test":
+                    if k == "bts_test" and self.test_dir is not None:
                         output_dir = self.test_dir
                     else:
                         output_dir = self.train_dir
