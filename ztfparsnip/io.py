@@ -15,7 +15,6 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import pandas as pd
 import yaml
-
 from astropy.time import Time  # type: ignore
 
 logger = logging.getLogger(__name__)
@@ -322,6 +321,8 @@ def download_sample(testing: bool = False, bl_corrected: bool = True):
             raise ValueError(
                 f"Something went wrong with your download. Remove 'ZTFDATA/ztfparsnip/{zipfile_name}' and try again"
             )
+
+        logger.info(f"{nr_files} found in dir")
 
     else:
         raise ValueError(
